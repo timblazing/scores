@@ -2,6 +2,7 @@ import clsx from 'clsx'
 import { CalendarDays, ListOrdered, Newspaper, Shield } from 'lucide-react'
 import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
+import { SearchDialog, SearchTrigger } from './Search'
 
 const NAV = [
   { to: '/', label: 'Scores', icon: CalendarDays, end: true },
@@ -24,6 +25,7 @@ export function Layout() {
           <img src="/icon.svg" alt="" className="size-7" />
           Scores
         </NavLink>
+        <SearchTrigger shortcut label="Search" className="mb-4" />
         <nav className="flex flex-col gap-1">
           {NAV.map(({ to, label, icon: Icon, end }) => (
             <NavLink
@@ -66,6 +68,7 @@ export function Layout() {
           ))}
         </div>
       </nav>
+      <SearchDialog />
     </div>
   )
 }

@@ -82,3 +82,8 @@
     animation: none;
   }
 }
+
+/* Lock page scroll behind the search dialog. */
+html:has(dialog[open]) {
+  overflow: hidden;
+}

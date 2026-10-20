@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useMemo, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 import { GameList } from '@/components/GameRow'
+import { SearchTrigger } from '@/components/Search'
 import { Empty, ErrorState, Loading, PageHeader, Segmented } from '@/components/ui'
 import { getScoreboard, LEAGUES, type Game, type LeagueId, type Scoreboard } from '@/lib/espn'
 import { useFavorites } from '@/lib/favorites'
@@ -41,6 +42,9 @@ export function ScoresPage() {
           ]}
         />
       </PageHeader>
+      <div className="px-3 pb-3 lg:hidden">
+        <SearchTrigger />
+      </div>
       {view === 'nfl' ? (
         <NflWeek week={params.get('w')} seasonType={params.get('st')} onWeek={(w, st) => update({ w, st })} />
       ) : (

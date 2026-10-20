@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { Article } from '@/components/Article'
 import { Back } from '@/components/Layout'
-import { Card, Empty, ErrorState, FavButton, Headshot, Loading, Logo, Tabs } from '@/components/ui'
+import { Card, Empty, ErrorState, FavButton, Headshot, Loading, Logo, Tabs, Watermark } from '@/components/ui'
 import { getNews, getRoster, getTeamSchedule, headshot, teamLogo, type Game, type LeagueId } from '@/lib/espn'
 import { readable, time } from '@/lib/format'
 
@@ -26,14 +26,15 @@ export function TeamPage() {
   return (
     <div>
       <header
-        className="pt-safe lg:mt-4 lg:rounded-card"
+        className="relative overflow-hidden pt-safe lg:mt-4 lg:rounded-card"
         style={{ background: `linear-gradient(160deg, color-mix(in srgb, ${color} 60%, black) 0%, #000 85%)` }}
       >
-        <div className="flex items-center justify-between px-3 pt-3">
+        <Watermark src={teamLogo(league, t.abbr, 400)} />
+        <div className="relative flex items-center justify-between px-3 pt-3">
           <Back />
           <FavButton fav={{ league, id, abbr: t.abbr, name: t.displayName }} className="bg-black/30 backdrop-blur" />
         </div>
-        <div className="flex items-center gap-4 px-5 pt-2 pb-6">
+        <div className="relative flex items-center gap-4 px-5 pt-2 pb-6">
           <Logo src={teamLogo(league, t.abbr, 160)} alt={t.displayName} size={80} className="drop-shadow-lg" />
           <div className="min-w-0">
             <div className="text-[13px] text-fg/70">{t.location}</div>

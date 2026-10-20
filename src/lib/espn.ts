@@ -1,6 +1,12 @@
 // Thin client over ESPN's public (unofficial) JSON endpoints.
 // Endpoint reference: https://github.com/pseudo-r/Public-ESPN-API
-// All of these send `Access-Control-Allow-Origin: *`, so the app calls them directly.
+// On the web, site.api.espn.com requests go through the Worker's edge cache
+// (/api/espn/site/*, see worker/index.ts) and fall back to ESPN if the proxy fails.
+// site.web.api.espn.com (athletes, search) blocks Cloudflare, so it's always direct.
+// Inside Capacitor everything goes straight to ESPN so the iOS app doesn't depend on
+// the Worker. Every endpoint used here sends `Access-Control-Allow-Origin: *`.
+
+import { Capacitor } from '@capacitor/core'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Any = any
@@ -17,9 +23,25 @@ export const LEAGUE_IDS: LeagueId[] = ['nfl', 'nba']
 const SITE = 'https://site.api.espn.com/apis/site/v2/sports'
 const SITE_V2 = 'https://site.api.espn.com/apis/v2/sports'
 const COMMON = 'https://site.web.api.espn.com/apis/common/v3/sports'
+const SEARCH = 'https://site.web.api.espn.com/apis/common/v3/search'
 
-async function get<T = Any>(url: string): Promise<T> {
-  const res = await fetch(url)
+const useProxy = !Capacitor.isNativePlatform()
+
+async function fetchEspn(url: string, signal?: AbortSignal) {
+  const u = new URL(url)
+  if (useProxy && u.host === 'site.api.espn.com') {
+    try {
+      const res = await fetch(`/api/espn/site${u.pathname}${u.search}`, { signal })
+      if (res.ok || res.status === 404) return res
+    } catch (e) {
+      if (signal?.aborted) throw e
+    }
+  }
+  return fetch(url, { signal })
+}
+
+async function get<T = Any>(url: string, signal?: AbortSignal): Promise<T> {
+  const res = await fetchEspn(url, signal)
   if (!res.ok) throw new Error(`ESPN returned ${res.status} for ${new URL(url).pathname}`)
   return res.json()
 }
@@ -420,3 +442,44 @@ export const getAthleteOverview = (league: LeagueId, id: string) =>
 
 export const getAthleteGamelog = (league: LeagueId, id: string) =>
   get(`${COMMON}/${LEAGUES[league].sport}/${league}/athletes/${id}/gamelog`)
+
+/* ---------- search ---------- */
+
+export interface PlayerHit {
+  id: string
+  league: LeagueId
+  name: string
+  team?: string
+  teamAbbr?: string
+  position?: string
+  jersey?: string
+  headshot?: string
+  relevance: number
+}
+
+// common/v3/search filters by one league per request, so NFL and NBA are fetched in parallel.
+export async function searchPlayers(query: string, signal?: AbortSignal, limit = 6): Promise<PlayerHit[]> {
+  const lists = await Promise.all(
+    LEAGUE_IDS.map(async (league) => {
+      const p = new URLSearchParams({ query, type: 'player', sport: LEAGUES[league].sport, league, limit: String(limit) })
+      const d = await get(`${SEARCH}?${p}`, signal)
+      return (d.items ?? [])
+        .filter((a: Any) => a.league === league && a.isActive !== false)
+        .map((a: Any): PlayerHit => {
+          const team = (a.teamRelationships ?? []).find((r: Any) => r.type === 'team')?.core
+          return {
+            id: String(a.id),
+            league,
+            name: a.displayName,
+            team: team?.displayName,
+            teamAbbr: team?.abbreviation,
+            position: a.position?.abbreviation,
+            jersey: a.jersey,
+            headshot: headshot(league, String(a.id), 64),
+            relevance: Number(a.relevance ?? 0),
+          }
+        })
+    }),
+  )
+  return lists.flat().sort((a, b) => b.relevance - a.relevance)
+}

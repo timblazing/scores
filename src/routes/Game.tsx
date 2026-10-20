@@ -19,8 +19,8 @@ import {
 } from '@/components/game/sections'
 import { WinChart } from '@/components/game/WinChart'
 import { Back } from '@/components/Layout'
-import { Card, ErrorState, FavButton, LiveDot, Loading, Logo, Tabs } from '@/components/ui'
-import { getSummary, type Game, type LeagueId, type Side } from '@/lib/espn'
+import { Card, ErrorState, FavButton, LiveDot, Loading, Logo, Tabs, Watermark } from '@/components/ui'
+import { getSummary, teamLogo, type Game, type LeagueId, type Side } from '@/lib/espn'
 import { dateTime, readable, time } from '@/lib/format'
 
 type Tab = 'game' | 'box' | 'plays' | 'stats'
@@ -106,12 +106,14 @@ function Header({ game }: { game: Game }) {
         background: `linear-gradient(105deg, color-mix(in srgb, ${away} 55%, black) 0%, #000 50%, color-mix(in srgb, ${home} 55%, black) 100%)`,
       }}
     >
-      <div className="flex items-center justify-between px-3 pt-3">
+      <Watermark src={teamLogo(game.league, game.away.abbr, 400)} side="left" />
+      <Watermark src={teamLogo(game.league, game.home.abbr, 400)} side="right" />
+      <div className="relative flex items-center justify-between px-3 pt-3">
         <Back />
         <span className="text-[12px] font-medium text-fg/70">{game.note ?? (game.league === 'nfl' ? 'NFL' : 'NBA')}</span>
         <span className="size-9" />
       </div>
-      <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-6 sm:px-8">
+      <div className="relative flex items-center justify-between gap-2 px-4 pt-2 pb-6 sm:px-8">
         <HeaderTeam side={game.away} game={game} />
         <div className="flex flex-1 items-center justify-center gap-3 sm:gap-6">
           <BigScore side={game.away} other={game.home} game={game} />

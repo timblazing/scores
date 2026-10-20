@@ -4,7 +4,7 @@ import clsx from 'clsx'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { Back } from '@/components/Layout'
-import { Card, Empty, ErrorState, Loading, Logo, Tabs } from '@/components/ui'
+import { Card, Empty, ErrorState, Loading, Logo, Tabs, Watermark } from '@/components/ui'
 import { getAthlete, getAthleteGamelog, getAthleteOverview, headshot, teamLogo, type LeagueId } from '@/lib/espn'
 import { ago, readable } from '@/lib/format'
 
@@ -34,14 +34,7 @@ export function PlayerPage() {
   return (
     <div>
       <header className="relative overflow-hidden pt-safe lg:mt-4 lg:rounded-card" style={{ background: `linear-gradient(160deg, color-mix(in srgb, ${color} 60%, black) 0%, #000 90%)` }}>
-        {a.team?.abbreviation && (
-          <img
-            src={teamLogo(league, a.team.abbreviation, 300)}
-            alt=""
-            aria-hidden
-            className="pointer-events-none absolute -top-6 -left-10 size-56 opacity-15"
-          />
-        )}
+        <Watermark src={a.team?.abbreviation && teamLogo(league, a.team.abbreviation, 400)} />
         <div className="relative flex items-center px-3 pt-3">
           <Back />
         </div>
@@ -50,14 +43,14 @@ export function PlayerPage() {
           <div className="min-w-0 pb-5">
             <div className="text-[15px] leading-tight text-fg/80">{a.firstName}</div>
             <h1 className="text-[28px] leading-none font-bold tracking-tight">{a.lastName}</h1>
-            <div className="mt-2 flex items-center gap-1.5 text-[13px] text-fg/70">
+            <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[13px] text-fg/70">
               {a.team && (
                 <Link to={`/${league}/team/${a.team.id}`} className="flex items-center gap-1.5 font-medium text-fg">
                   <Logo src={teamLogo(league, a.team.abbreviation, 40)} alt="" size={18} />
                   {a.team.abbreviation}
                 </Link>
               )}
-              <span>{[a.jersey && `#${a.jersey}`, a.position?.displayName ?? a.position?.abbreviation].filter(Boolean).join(' · ')}</span>
+              <span className="whitespace-nowrap">{[a.jersey && `#${a.jersey}`, a.position?.displayName ?? a.position?.abbreviation].filter(Boolean).join(' · ')}</span>
             </div>
             {injury && (
               <div className="mt-1.5 text-[12px] font-medium text-live">

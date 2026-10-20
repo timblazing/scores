@@ -6,7 +6,7 @@ Live at **https://scores.blasingame.dev**.
 
 - Web: Vite + React + TypeScript + Tailwind v4, TanStack Query, React Router
 - iOS: the same build wrapped with [Capacitor](https://capacitorjs.com) (`ios/`)
-- Data: ESPN's public, unofficial JSON endpoints, called directly from the client. Reference: [pseudo-r/Public-ESPN-API](https://github.com/pseudo-r/Public-ESPN-API). Not affiliated with ESPN.
+- Data: ESPN's public, unofficial JSON endpoints. On the web, `site.api.espn.com` goes through an edge-caching Worker (`worker/index.ts`, `/api/espn/site/*`); athletes and search, plus everything in the iOS app, call ESPN directly. Reference: [pseudo-r/Public-ESPN-API](https://github.com/pseudo-r/Public-ESPN-API). Not affiliated with ESPN.
 
 ## Develop
 
@@ -22,7 +22,7 @@ pnpm build        # outputs dist/
 pnpm run deploy   # tsc + `cf deploy` → Worker "scores" on scores.blasingame.dev
 ```
 
-Config lives in `cloudflare.config.ts` (SPA fallback + custom domain).
+Config lives in `cloudflare.config.ts`: the ESPN cache Worker runs only for `/api/*`; everything else is static assets with SPA fallback on the custom domain.
 
 ## iOS app (free Apple account, no $99 program)
 

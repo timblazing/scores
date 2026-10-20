@@ -161,3 +161,26 @@ export function PageHeader({ title, children }: { title: ReactNode; children?: R
     </div>
   )
 }
+
+/**
+ * Oversized, low-opacity team logo for team-color gradient headers. Bleeds off the
+ * given edge and fades toward the content so it never competes with text.
+ * The parent must be `relative overflow-hidden`; content above it needs `relative`.
+ */
+export function Watermark({ src, side = 'right' }: { src?: string; side?: 'left' | 'right' }) {
+  if (!src) return null
+  return (
+    <img
+      src={src}
+      alt=""
+      aria-hidden
+      draggable={false}
+      onError={(e) => (e.currentTarget.style.display = 'none')}
+      className={clsx(
+        'pointer-events-none absolute top-1/2 size-[240px] -translate-y-1/2 object-contain opacity-[0.09] select-none sm:size-[320px]',
+        side === 'right' ? '-right-24 sm:-right-16' : '-left-24 sm:-left-16',
+      )}
+      style={{ maskImage: `linear-gradient(to ${side === 'right' ? 'left' : 'right'}, #000 30%, transparent 90%)` }}
+    />
+  )
+}
