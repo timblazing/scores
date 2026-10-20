@@ -12,7 +12,9 @@ const NAV = [
 
 export function Layout() {
   const { pathname } = useLocation()
-  useEffect(() => window.scrollTo(0, 0), [pathname])
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-6xl lg:gap-8 lg:px-6">
