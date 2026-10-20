@@ -16,16 +16,17 @@ pnpm dev          # http://localhost:5173
 pnpm build        # outputs dist/
 ```
 
-## Deploy (Cloudflare Pages)
+## Deploy (Cloudflare Workers static assets)
 
 ```sh
-pnpm build
-cf pages deploy dist   # project: scores, domain: scores.blasingame.dev
+pnpm run deploy   # tsc + `cf deploy` → Worker "scores" on scores.blasingame.dev
 ```
+
+Config lives in `cloudflare.config.ts` (SPA fallback + custom domain).
 
 ## iOS app (free Apple account, no $99 program)
 
-1. `pnpm ios` builds the web app, syncs it into `ios/`, and opens Xcode.
+1. `pnpm ios` builds the web app (`--mode capacitor`, without the Cloudflare plugin), syncs it into `ios/`, and opens Xcode.
 2. In Xcode → **App** target → **Signing & Capabilities**, choose your Personal Team. If the bundle ID `dev.blasingame.scores` is taken, change it to something unique.
 3. Plug in your iPhone, select it as the run destination, and press Run. On the phone, trust the developer profile in **Settings → General → VPN & Device Management**.
 
