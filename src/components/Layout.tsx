@@ -44,7 +44,6 @@ export function Layout() {
             </NavLink>
           ))}
         </nav>
-        <p className="mt-auto px-3 text-xs leading-relaxed text-faint">Data from ESPN's public API. Not affiliated with ESPN.</p>
       </aside>
 
       <main className="min-w-0 flex-1 pt-safe pb-[calc(76px+env(safe-area-inset-bottom))] lg:pt-2 lg:pb-12">

@@ -57,7 +57,7 @@ export function TeamsPage() {
               {r.isError && <ErrorState error={r.error} retry={r.refetch} />}
               {teams.length > 0 && (
                 <Card>
-                  <ul className="grid divide-y divide-line sm:grid-cols-2 sm:divide-y-0">
+                  <ul className="grid divide-y divide-line sm:grid-cols-2 sm:divide-y-0 sm:[&>li]:border-b sm:[&>li]:border-line sm:[&>li:last-child]:border-b-0 sm:[&>li:nth-last-child(2):nth-child(odd)]:border-b-0">
                     {teams.map((t) => (
                       <TeamItem key={t.id} league={l} id={t.id} abbr={t.abbr} name={t.displayName} />
                     ))}
@@ -75,7 +75,7 @@ export function TeamsPage() {
 
 function TeamItem({ league, id, abbr, name, sub }: { league: 'nfl' | 'nba'; id: string; abbr: string; name: string; sub?: string }) {
   return (
-    <li className="flex items-center sm:border-b sm:border-line">
+    <li className="flex items-center">
       <Link to={`/${league}/team/${id}`} className="flex min-w-0 flex-1 items-center gap-3 py-2.5 pl-4">
         <Logo src={teamLogo(league, abbr, 64)} alt="" size={28} />
         <span className="truncate text-[15px] font-medium">{name}</span>
