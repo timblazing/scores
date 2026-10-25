@@ -113,6 +113,8 @@ function useFavFirst(games: Game[]) {
   return { mine, rest }
 }
 
+const ranked = (g: Game) => !!(g.home.rank || g.away.rank)
+
 const byState = (a: Game, b: Game) => {
   const rank = { in: 0, pre: 1, post: 2 }
   return rank[a.state] - rank[b.state] || a.date.localeCompare(b.date)
@@ -125,15 +127,20 @@ function DayGames({ date, leagues }: { date: string; leagues: LeagueId[] }) {
     refetchInterval: (query) => liveInterval(query.state),
   })
   const all = (q.data ?? []).flatMap((s) => s.games).sort(byState)
-  const { mine, rest } = useFavFirst(all)
+  const { mine, rest: others } = useFavFirst(all)
+  // With several leagues on screen, college football is limited to Top 25 games.
+  const shown = leagues.length > 1 ? others.filter((g) => g.league !== 'cfb' || ranked(g)) : others
+  const live = shown.filter((g) => g.state === 'in')
+  const rest = shown.filter((g) => g.state !== 'in')
 
   if (q.isPending) return <div className="px-4 lg:px-0"><Loading /></div>
   if (q.isError) return <div className="px-4 lg:px-0"><ErrorState error={q.error} retry={q.refetch} /></div>
 
   return (
     <div className="space-y-5 px-3 lg:px-0">
-      {!all.length && <Empty>No {leagues.length > 1 ? '' : `${LEAGUES[leagues[0]].name} `}games {dayLabel(date) === 'Today' ? 'today' : `on ${shortDate(date)}`}.</Empty>}
+      {!mine.length && !shown.length && <Empty>No {leagues.length > 1 ? '' : `${LEAGUES[leagues[0]].name} `}games {dayLabel(date) === 'Today' ? 'today' : `on ${shortDate(date)}`}.</Empty>}
       {mine.length > 0 && <Group title="My Teams" games={mine} />}
+      {live.length > 0 && <Group title="Live" games={live} />}
       {leagues.map((l) => {
         const games = rest.filter((g) => g.league === l)
         return games.length ? <Group key={l} title={leagues.length > 1 ? LEAGUES[l].name : undefined} games={games} /> : null
@@ -182,8 +189,12 @@ function WeekGames({
 
   const games = [...(data?.games ?? [])].sort((a, b) => a.date.localeCompare(b.date))
   const { mine, rest } = useFavFirst(games)
+  mine.sort(byState)
+  // Live games first, then (college) Top 25, then everything else by day.
+  const live = rest.filter((g) => g.state === 'in')
+  const top = league === 'cfb' ? rest.filter((g) => g.state !== 'in' && ranked(g)) : []
   const days = new Map<string, Game[]>()
-  for (const g of rest) {
+  for (const g of rest.filter((g) => !live.includes(g) && !top.includes(g))) {
     const key = new Date(g.date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })
     days.set(key, [...(days.get(key) ?? []), g])
   }
@@ -218,6 +229,8 @@ function WeekGames({
         {q.isError && <ErrorState error={q.error} retry={q.refetch} />}
         {data && !games.length && <Empty>No games scheduled this week.</Empty>}
         {mine.length > 0 && <Group title="My Teams" games={mine} />}
+        {live.length > 0 && <Group title="Live" games={live} />}
+        {top.length > 0 && <Group title="Top 25" games={top} />}
         {[...days].map(([day, gs]) => (
           <Group key={day} title={day} games={gs} />
         ))}

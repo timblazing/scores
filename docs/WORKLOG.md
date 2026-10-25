@@ -14,7 +14,7 @@ Features (NFL + CFB/FBS + NBA):
 
 | Area | Route | Notes |
 |---|---|---|
-| Scores | `/` (`?league=nfl\|cfb\|nba`, `?d=YYYYMMDD`, `?w=&st=`) | All/NFL/CFB/NBA. Date strip for All/NBA, week strip for NFL/CFB. AP rank shown next to ranked college teams. My Teams pinned on top. Live games refetch every 15s. |
+| Scores | `/` (`?league=nfl\|cfb\|nba`, `?d=YYYYMMDD`, `?w=&st=`) | All/NFL/CFB/NBA. Date strip for All/NBA, week strip for NFL/CFB. Order: My Teams, Live, then (CFB) Top 25, then by league/day. All shows only Top 25 college games. AP rank shown next to ranked college teams. My Teams pinned on top. Live games refetch every 15s. |
 | Game | `/:league/game/:id` | Team-color header, line score, win probability + game flow chart (scrubbable), leaders, odds, scoring summary (NFL), team stats, last 5, season series, injuries, game info, predictor (pre-game). Tabs: Game, Box score, Plays (NBA by quarter, NFL by drive), Team stats. |
 | Standings | `/standings` | NFL by division (AFC/NFC), NBA by conference with play-in line, CFB by FBS conference (scrollable picker). |
 | Teams | `/teams` | Search, My Teams (localStorage), star to follow. |
