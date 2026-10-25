@@ -121,11 +121,16 @@ export function FavButton({ fav, className, size = 18 }: { fav: Favorite; classN
   )
 }
 
-export function Football({ className }: { className?: string }) {
+/** Filled triangle beside a score, pointing at the team with the ball. `side` is which team it points at. */
+export function Possession({ side, className }: { side: 'left' | 'right'; className?: string }) {
   return (
-    <svg viewBox="0 0 24 14" className={className} aria-hidden>
-      <ellipse cx="12" cy="7" rx="11.5" ry="6.5" fill="#a5532f" />
-      <path d="M7.5 7h9M10 5.5v3M12 5.5v3M14 5.5v3" stroke="#fff" strokeWidth="1.1" strokeLinecap="round" />
+    <svg
+      viewBox="0 0 6 8"
+      role="img"
+      aria-label="Has possession"
+      className={clsx('pointer-events-none absolute top-1/2 h-2 w-1.5 -translate-y-1/2 fill-current', side === 'left' ? 'left-full' : 'right-full', className)}
+    >
+      <path d={side === 'left' ? 'M0 4 6 0v8z' : 'M6 4 0 0v8z'} />
     </svg>
   )
 }

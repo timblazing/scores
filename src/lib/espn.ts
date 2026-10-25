@@ -143,6 +143,8 @@ const fmtML = (v: unknown) => {
   return n > 0 ? `+${n}` : String(n)
 }
 
+export const hasPossession = (game: Game, side: Side) => game.state === 'in' && game.situation?.possessionId === side.id
+
 export function parseOdds(o: Any): Odds | undefined {
   if (!o) return undefined
   const ps = o.pointSpread
@@ -305,6 +307,9 @@ export async function getSummary(league: LeagueId, id: string): Promise<Summary>
       isRedZone: sit.isRedZone,
       lastPlay: sit.lastPlay?.text,
     }
+  // Football summaries have no top-level situation; the header competitors carry `possession`.
+  const withBall = h.competitions?.[0]?.competitors?.find((c: Any) => c.possession)
+  if (withBall && game.state === 'in') game.situation = { ...game.situation, possessionId: String(withBall.id) }
   return { game, raw: d }
 }
 

@@ -1,26 +1,15 @@
 import clsx from 'clsx'
 import { Link } from 'react-router'
-import type { Game, Side } from '@/lib/espn'
+import { hasPossession, type Game, type Side } from '@/lib/espn'
 import { time } from '@/lib/format'
 import { useFavorites } from '@/lib/favorites'
-import { Football, Logo } from './ui'
+import { Logo, Possession } from './ui'
 
 function Team({ side, game, align }: { side: Side; game: Game; align: 'left' | 'right' }) {
   const { isFav } = useFavorites()
-  const hasBall = game.state === 'in' && game.situation?.possessionId === side.id
   return (
     <div className={clsx('flex w-16 shrink-0 flex-col items-center gap-1 sm:w-20')}>
-      <div className="relative">
-        <Logo src={side.logo} alt={side.displayName} size={36} />
-        {hasBall && (
-          <span
-            className={clsx('absolute top-1/2 -translate-y-1/2', align === 'left' ? 'left-full ml-0.5' : 'right-full mr-0.5')}
-            aria-label="Has possession"
-          >
-            <Football className="h-2 w-3.5" />
-          </span>
-        )}
-      </div>
+      <Logo src={side.logo} alt={side.displayName} size={36} />
       <div className={clsx('flex max-w-full items-center gap-1 text-[12px] leading-tight text-muted', align === 'right' && 'flex-row-reverse')}>
         <span className="truncate">
           {side.rank && <span className="mr-1 text-[10px] text-faint tnum">{side.rank}</span>}
@@ -32,12 +21,15 @@ function Team({ side, game, align }: { side: Side; game: Game; align: 'left' | '
   )
 }
 
-function Score({ side, other, game }: { side: Side; other: Side; game: Game }) {
+function Score({ side, other, game, align }: { side: Side; other: Side; game: Game; align: 'left' | 'right' }) {
   if (game.state === 'pre') return <span className="w-14 text-center text-[13px] text-faint tnum sm:w-16">{side.record}</span>
   const lost = game.state === 'post' && (side.winner === false || Number(side.score) < Number(other.score))
   return (
     <span className={clsx('w-14 text-center font-score text-[34px] leading-none font-semibold tnum sm:w-16', lost && 'text-faint')}>
-      {side.score ?? '-'}
+      <span className="relative">
+        {side.score ?? '-'}
+        {hasPossession(game, side) && <Possession side={align} className={clsx('text-fg', align === 'left' ? 'ml-1.5' : 'mr-1.5')} />}
+      </span>
     </span>
   )
 }
@@ -68,12 +60,12 @@ export function GameRow({ game }: { game: Game }) {
       className="flex items-center justify-between gap-1 px-3 py-3 transition-colors hover:bg-raised/60 active:bg-raised"
     >
       <Team side={game.away} game={game} align="left" />
-      <Score side={game.away} other={game.home} game={game} />
+      <Score side={game.away} other={game.home} game={game} align="left" />
       <div className="flex min-w-0 flex-1 flex-col items-center text-center">
         <Status game={game} />
         {game.broadcast && game.state === 'pre' && <span className="mt-0.5 max-w-full truncate text-[11px] text-faint">{game.broadcast}</span>}
       </div>
-      <Score side={game.home} other={game.away} game={game} />
+      <Score side={game.home} other={game.away} game={game} align="right" />
       <Team side={game.home} game={game} align="right" />
     </Link>
   )

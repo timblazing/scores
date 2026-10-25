@@ -19,8 +19,8 @@ import {
 } from '@/components/game/sections'
 import { WinChart } from '@/components/game/WinChart'
 import { Back } from '@/components/Layout'
-import { Card, ErrorState, FavButton, Loading, Logo, Tabs, Watermark } from '@/components/ui'
-import { getSummary, LEAGUES, teamLogo, type Game, type LeagueId, type Side } from '@/lib/espn'
+import { Card, ErrorState, FavButton, Loading, Logo, Possession, Tabs, Watermark } from '@/components/ui'
+import { getSummary, hasPossession, LEAGUES, teamLogo, type Game, type LeagueId, type Side } from '@/lib/espn'
 import { dateTime, readable, time } from '@/lib/format'
 
 type Tab = 'game' | 'box' | 'plays' | 'stats'
@@ -115,8 +115,8 @@ function Header({ game }: { game: Game }) {
       </div>
       <div className="relative flex items-center justify-between gap-2 px-4 pt-2 pb-6 sm:px-8">
         <HeaderTeam side={game.away} game={game} />
-        <div className="flex flex-1 items-center justify-center gap-3 sm:gap-6">
-          <BigScore side={game.away} other={game.home} game={game} />
+        <div className="grid flex-1 grid-cols-[1fr_auto_1fr] items-center gap-4 sm:gap-6">
+          <BigScore side={game.away} other={game.home} game={game} align="left" />
           <div className="min-w-20 text-center">
             {game.state === 'in' ? (
               <span className="text-[14px] font-semibold text-live">{game.shortDetail.replace(/ - /, ' · ')}</span>
@@ -130,7 +130,7 @@ function Header({ game }: { game: Game }) {
             )}
             {game.broadcast && <div className="mt-1 text-[11px] text-fg/60">{game.broadcast}</div>}
           </div>
-          <BigScore side={game.home} other={game.away} game={game} />
+          <BigScore side={game.home} other={game.away} game={game} align="right" />
         </div>
         <HeaderTeam side={game.home} game={game} />
       </div>
@@ -156,11 +156,21 @@ function HeaderTeam({ side, game }: { side: Side; game: Game }) {
   )
 }
 
-function BigScore({ side, other, game }: { side: Side; other: Side; game: Game }) {
-  if (game.state === 'pre') return null
+// Sits in a 1fr grid column on either side of the status, so the status stays centered under the league name.
+function BigScore({ side, other, game, align }: { side: Side; other: Side; game: Game; align: 'left' | 'right' }) {
+  if (game.state === 'pre') return <span />
   const lost = game.state === 'post' && Number(side.score) < Number(other.score)
   return (
-    <span className={clsx('font-score text-[48px] leading-none font-semibold tnum sm:text-[64px]', lost && 'text-fg/45')}>{side.score}</span>
+    <span
+      className={clsx(
+        'relative font-score text-[48px] leading-none font-semibold tnum sm:text-[64px]',
+        align === 'left' ? 'justify-self-end' : 'justify-self-start',
+        lost && 'text-fg/45',
+      )}
+    >
+      {side.score}
+      {hasPossession(game, side) && <Possession side={align} className={align === 'left' ? 'ml-1.5' : 'mr-1.5'} />}
+    </span>
   )
 }
 
