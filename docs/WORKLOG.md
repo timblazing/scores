@@ -82,6 +82,7 @@ Gotchas:
 
 - Web: `pnpm run deploy` → `tsc -b && cf deploy` → Worker `scores` with custom domain `scores.blasingame.dev`. SPA fallback via `assets.notFoundHandling`. The zone has a `*.blasingame.dev` wildcard A record; the Worker custom domain takes precedence for `scores`.
 - iOS: `pnpm ios` builds with `--mode capacitor` (skips the Cloudflare Vite plugin so output is plain `dist/`), syncs, opens Xcode. Sign with your free Personal Team; for no-cable 7-day refreshes, build an `.ipa` (see README) and install with SideStore.
+- From the Raspberry Pi: `CF_SKIP_TYPES=1 pnpm run deploy`. The Cloudflare plugin's type generation spawns workerd, whose tcmalloc assumes a 48-bit address space and aborts on the Pi's 39-bit kernel. Node lives in `~/.hermes/node`; `node`, `npm`, `pnpm` are symlinked into `~/.local/bin`.
 - Xcode 27.1 reported "CoreSimulator is out of date" — update components in Xcode settings before using the simulator.
 
 ### Next up (done in Session 2)
