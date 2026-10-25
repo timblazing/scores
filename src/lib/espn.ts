@@ -11,14 +11,21 @@ import { Capacitor } from '@capacitor/core'
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Any = any
 
-export type LeagueId = 'nfl' | 'nba'
+export type LeagueId = 'nfl' | 'cfb' | 'nba'
 
-export const LEAGUES: Record<LeagueId, { id: LeagueId; sport: string; name: string; periodName: string }> = {
-  nfl: { id: 'nfl', sport: 'football', name: 'NFL', periodName: 'Quarter' },
-  nba: { id: 'nba', sport: 'basketball', name: 'NBA', periodName: 'Quarter' },
+// `slug` is ESPN's league path segment; `logos` is its team-logo folder.
+export const LEAGUES: Record<LeagueId, { id: LeagueId; sport: string; slug: string; logos: string; name: string; periodName: string }> = {
+  nfl: { id: 'nfl', sport: 'football', slug: 'nfl', logos: 'nfl', name: 'NFL', periodName: 'Quarter' },
+  cfb: { id: 'cfb', sport: 'football', slug: 'college-football', logos: 'ncaa', name: 'CFB', periodName: 'Quarter' },
+  nba: { id: 'nba', sport: 'basketball', slug: 'nba', logos: 'nba', name: 'NBA', periodName: 'Quarter' },
 }
 
-export const LEAGUE_IDS: LeagueId[] = ['nfl', 'nba']
+export const LEAGUE_IDS: LeagueId[] = ['nfl', 'cfb', 'nba']
+
+export const isLeague = (v: unknown): v is LeagueId => typeof v === 'string' && v in LEAGUES
+
+// College football is limited to FBS (ESPN group 80).
+const FBS = '80'
 
 const SITE = 'https://site.api.espn.com/apis/site/v2/sports'
 const SITE_V2 = 'https://site.api.espn.com/apis/v2/sports'
@@ -46,7 +53,8 @@ async function get<T = Any>(url: string, signal?: AbortSignal): Promise<T> {
   return res.json()
 }
 
-const base = (l: LeagueId) => `${SITE}/${LEAGUES[l].sport}/${l}`
+const path = (l: LeagueId) => `${LEAGUES[l].sport}/${LEAGUES[l].slug}`
+const base = (l: LeagueId) => `${SITE}/${path(l)}`
 
 /* ---------- images ---------- */
 
@@ -57,14 +65,16 @@ export function img(path: string | undefined, w: number, h = w) {
   return `https://a.espncdn.com/combiner/i?img=${p}&w=${w}&h=${h}`
 }
 
-export function teamLogo(league: LeagueId, abbr: string | undefined, size = 80) {
-  if (!abbr) return undefined
-  return img(`/i/teamlogos/${league}/500-dark/${abbr.toLowerCase()}.png`, size)
+// NFL/NBA logos are keyed by abbreviation, college logos by team id.
+export function teamLogo(league: LeagueId, abbr: string | undefined, size = 80, id?: string | number) {
+  const key = league === 'cfb' ? id : abbr?.toLowerCase()
+  if (key == null || key === '') return undefined
+  return img(`/i/teamlogos/${LEAGUES[league].logos}/500-dark/${key}.png`, size)
 }
 
 export function headshot(league: LeagueId, athleteId: string | undefined, size = 96) {
   if (!athleteId) return undefined
-  return img(`/i/headshots/${league}/players/full/${athleteId}.png`, Math.round(size * 1.375), size)
+  return img(`/i/headshots/${LEAGUES[league].slug}/players/full/${athleteId}.png`, Math.round(size * 1.375), size)
 }
 
 /* ---------- normalized game ---------- */
@@ -81,6 +91,7 @@ export interface Side {
   altColor: string
   score?: string
   record?: string
+  rank?: number
   winner?: boolean
   linescores: string[]
 }
@@ -158,16 +169,18 @@ function parseSide(c: Any, league: LeagueId): Side {
   const t = c.team ?? {}
   const rec = Array.isArray(c.records) ? c.records : Array.isArray(c.record) ? c.record : []
   const total = rec.find((r: Any) => r.type === 'total' || r.name === 'overall') ?? rec[0]
+  const rank = Number(c.curatedRank?.current ?? c.rank ?? 0) // AP/CFP rank; 99 = unranked
   return {
     id: String(t.id ?? c.id),
     abbr: t.abbreviation ?? '',
     name: t.shortDisplayName ?? t.name ?? t.displayName ?? '',
     displayName: t.displayName ?? '',
-    logo: teamLogo(league, t.abbreviation),
+    logo: teamLogo(league, t.abbreviation, 80, t.id ?? c.id),
     color: t.color ? `#${t.color}` : '#333333',
     altColor: t.alternateColor ? `#${t.alternateColor}` : '#666666',
     score: c.score?.displayValue ?? (typeof c.score === 'string' ? c.score : undefined),
     record: total?.summary ?? total?.displayValue,
+    rank: rank > 0 && rank <= 25 ? rank : undefined,
     winner: c.winner,
     linescores: (c.linescores ?? []).map((l: Any) => String(l.displayValue ?? l.value ?? '')),
   }
@@ -236,7 +249,8 @@ export async function getScoreboard(
   league: LeagueId,
   q: { date?: string; week?: string; seasonType?: string; year?: number } = {},
 ): Promise<Scoreboard> {
-  const p = new URLSearchParams({ limit: '100' })
+  const p = new URLSearchParams({ limit: league === 'cfb' ? '300' : '100' })
+  if (league === 'cfb') p.set('groups', FBS)
   if (q.date) p.set('dates', q.date)
   if (q.week) {
     p.set('week', q.week)
@@ -313,7 +327,8 @@ function parseEntries(entries: Any[], league: LeagueId): StandingRow[] {
     const stats: Record<string, string> = {}
     for (const s of e.stats ?? []) {
       const k = s.name ?? s.type
-      if (k) stats[k] = s.displayValue ?? s.summary ?? String(s.value ?? '')
+      // College entries repeat each stat per split (home, away, ...); the first is overall.
+      if (k && !(k in stats)) stats[k] = s.displayValue ?? s.summary ?? String(s.value ?? '')
     }
     return {
       team: {
@@ -321,7 +336,7 @@ function parseEntries(entries: Any[], league: LeagueId): StandingRow[] {
         abbr: e.team.abbreviation,
         name: e.team.shortDisplayName ?? e.team.name,
         displayName: e.team.displayName,
-        logo: teamLogo(league, e.team.abbreviation, 48),
+        logo: teamLogo(league, e.team.abbreviation, 48, e.team.id),
       },
       stats,
       note: e.note?.description,
@@ -337,11 +352,11 @@ const sortRows = (rows: StandingRow[]) =>
   })
 
 export async function getStandings(league: LeagueId): Promise<StandingGroup[]> {
-  const path = league === 'nfl' ? 'standings?level=3' : 'standings'
-  const d = await get(`${SITE_V2}/${LEAGUES[league].sport}/${league}/${path}`)
+  const q = league === 'nfl' ? '?level=3' : league === 'cfb' ? `?group=${FBS}` : ''
+  const d = await get(`${SITE_V2}/${path(league)}/standings${q}`)
   return (d.children ?? []).map((conf: Any) => ({
     name: conf.name,
-    short: conf.abbreviation ?? conf.name,
+    short: (league === 'cfb' ? conf.shortName : conf.abbreviation) ?? conf.name,
     groups: conf.children?.length
       ? conf.children.map((div: Any) => ({ name: div.name, rows: sortRows(parseEntries(div.standings?.entries ?? [], league)) }))
       : [{ name: conf.name, rows: sortRows(parseEntries(conf.standings?.entries ?? [], league)) }],
@@ -371,7 +386,7 @@ export async function getTeams(league: LeagueId): Promise<TeamLite[]> {
       abbr: r.team.abbr,
       name: r.team.name,
       displayName: r.team.displayName,
-      logo: teamLogo(league, r.team.abbr, 64),
+      logo: teamLogo(league, r.team.abbr, 64, r.team.id),
     }))
     .sort((a, b) => a.displayName.localeCompare(b.displayName))
 }
@@ -435,13 +450,13 @@ export async function getNews(league: LeagueId, teamId?: string, limit = 25): Pr
 /* ---------- athletes ---------- */
 
 export const getAthlete = (league: LeagueId, id: string) =>
-  get(`${COMMON}/${LEAGUES[league].sport}/${league}/athletes/${id}`).then((d) => d.athlete)
+  get(`${COMMON}/${path(league)}/athletes/${id}`).then((d) => d.athlete)
 
 export const getAthleteOverview = (league: LeagueId, id: string) =>
-  get(`${COMMON}/${LEAGUES[league].sport}/${league}/athletes/${id}/overview`)
+  get(`${COMMON}/${path(league)}/athletes/${id}/overview`)
 
 export const getAthleteGamelog = (league: LeagueId, id: string) =>
-  get(`${COMMON}/${LEAGUES[league].sport}/${league}/athletes/${id}/gamelog`)
+  get(`${COMMON}/${path(league)}/athletes/${id}/gamelog`)
 
 /* ---------- search ---------- */
 
@@ -457,14 +472,15 @@ export interface PlayerHit {
   relevance: number
 }
 
-// common/v3/search filters by one league per request, so NFL and NBA are fetched in parallel.
+// common/v3/search filters by one league per request, so each league is fetched in parallel.
 export async function searchPlayers(query: string, signal?: AbortSignal, limit = 6): Promise<PlayerHit[]> {
   const lists = await Promise.all(
     LEAGUE_IDS.map(async (league) => {
-      const p = new URLSearchParams({ query, type: 'player', sport: LEAGUES[league].sport, league, limit: String(limit) })
+      const { sport, slug } = LEAGUES[league]
+      const p = new URLSearchParams({ query, type: 'player', sport, league: slug, limit: String(limit) })
       const d = await get(`${SEARCH}?${p}`, signal)
       return (d.items ?? [])
-        .filter((a: Any) => a.league === league && a.isActive !== false)
+        .filter((a: Any) => a.league === slug && a.isActive !== false)
         .map((a: Any): PlayerHit => {
           const team = (a.teamRelationships ?? []).find((r: Any) => r.type === 'team')?.core
           return {

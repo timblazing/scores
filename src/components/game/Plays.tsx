@@ -59,7 +59,7 @@ function NbaPlays({ raw, game }: { raw: Any; game: Game }) {
             return (
               <li key={p.id} className="flex items-start gap-3 px-4 py-2.5">
                 <div className="w-11 shrink-0 pt-0.5 text-[12px] text-faint tnum">{p.clock?.displayValue}</div>
-                <div className="w-5 shrink-0 pt-0.5">{abbr && <Logo src={teamLogo(game.league, abbr, 40)} alt={abbr} size={18} />}</div>
+                <div className="w-5 shrink-0 pt-0.5">{abbr && <Logo src={teamLogo(game.league, abbr, 40, p.team?.id)} alt={abbr} size={18} />}</div>
                 <div className={clsx('min-w-0 flex-1 text-[14px] leading-snug', p.scoringPlay ? 'font-medium' : 'text-muted')}>{p.text}</div>
                 <div className={clsx('shrink-0 text-[13px] tnum', p.scoringPlay ? 'font-semibold' : 'text-faint')}>
                   {p.awayScore}-{p.homeScore}
@@ -90,7 +90,7 @@ function NflDrives({ raw, game }: { raw: Any; game: Game }) {
           return (
             <li key={d.id}>
               <button onClick={() => setOpen(isOpen ? null : d.id)} className="flex w-full items-center gap-3 px-4 py-3 text-left" aria-expanded={isOpen}>
-                <Logo src={teamLogo(game.league, d.team?.abbreviation, 48)} alt={d.team?.abbreviation ?? ''} size={24} />
+                <Logo src={teamLogo(game.league, d.team?.abbreviation, 48, d.team?.id)} alt={d.team?.abbreviation ?? ''} size={24} />
                 <div className="min-w-0 flex-1">
                   <div className={clsx('text-[14px]', d.isScore ? 'font-semibold' : 'font-medium')}>{d.displayResult ?? d.result ?? 'In progress'}</div>
                   <div className="truncate text-[12px] text-muted">{d.description}</div>

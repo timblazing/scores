@@ -29,13 +29,13 @@ export function TeamPage() {
         className="relative overflow-hidden pt-safe lg:mt-4 lg:rounded-card"
         style={{ background: `linear-gradient(160deg, color-mix(in srgb, ${color} 60%, black) 0%, #000 85%)` }}
       >
-        <Watermark src={teamLogo(league, t.abbr, 400)} />
+        <Watermark src={teamLogo(league, t.abbr, 400, id)} />
         <div className="relative flex items-center justify-between px-3 pt-3">
           <Back />
           <FavButton fav={{ league, id, abbr: t.abbr, name: t.displayName }} className="bg-black/30 backdrop-blur" />
         </div>
         <div className="relative flex items-center gap-4 px-5 pt-2 pb-6">
-          <Logo src={teamLogo(league, t.abbr, 160)} alt={t.displayName} size={80} className="drop-shadow-lg" />
+          <Logo src={teamLogo(league, t.abbr, 160, id)} alt={t.displayName} size={80} className="drop-shadow-lg" />
           <div className="min-w-0">
             <div className="text-[13px] text-fg/70">{t.location}</div>
             <h1 className="text-[28px] leading-tight font-bold tracking-tight">{t.name}</h1>

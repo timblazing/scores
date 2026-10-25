@@ -20,7 +20,7 @@ import {
 import { WinChart } from '@/components/game/WinChart'
 import { Back } from '@/components/Layout'
 import { Card, ErrorState, FavButton, LiveDot, Loading, Logo, Tabs, Watermark } from '@/components/ui'
-import { getSummary, teamLogo, type Game, type LeagueId, type Side } from '@/lib/espn'
+import { getSummary, LEAGUES, teamLogo, type Game, type LeagueId, type Side } from '@/lib/espn'
 import { dateTime, readable, time } from '@/lib/format'
 
 type Tab = 'game' | 'box' | 'plays' | 'stats'
@@ -106,11 +106,11 @@ function Header({ game }: { game: Game }) {
         background: `linear-gradient(105deg, color-mix(in srgb, ${away} 55%, black) 0%, #000 50%, color-mix(in srgb, ${home} 55%, black) 100%)`,
       }}
     >
-      <Watermark src={teamLogo(game.league, game.away.abbr, 400)} side="left" />
-      <Watermark src={teamLogo(game.league, game.home.abbr, 400)} side="right" />
+      <Watermark src={teamLogo(game.league, game.away.abbr, 400, game.away.id)} side="left" />
+      <Watermark src={teamLogo(game.league, game.home.abbr, 400, game.home.id)} side="right" />
       <div className="relative flex items-center justify-between px-3 pt-3">
         <Back />
-        <span className="text-[12px] font-medium text-fg/70">{game.note ?? (game.league === 'nfl' ? 'NFL' : 'NBA')}</span>
+        <span className="text-[12px] font-medium text-fg/70">{game.note ?? LEAGUES[game.league].name}</span>
         <span className="size-9" />
       </div>
       <div className="relative flex items-center justify-between gap-2 px-4 pt-2 pb-6 sm:px-8">
@@ -146,7 +146,10 @@ function HeaderTeam({ side, game }: { side: Side; game: Game }) {
     <div className="relative flex w-20 flex-col items-center gap-1.5 sm:w-28">
       <Link to={`/${game.league}/team/${side.id}`} className="flex flex-col items-center gap-1.5">
         <Logo src={side.logo} alt={side.displayName} size={56} className="drop-shadow-lg sm:size-16" />
-        <span className="text-center text-[13px] leading-tight font-semibold">{side.name}</span>
+        <span className="text-center text-[13px] leading-tight font-semibold">
+          {side.rank && <span className="mr-1 text-[11px] font-normal text-fg/60 tnum">{side.rank}</span>}
+          {side.name}
+        </span>
       </Link>
       <div className="flex items-center text-[12px] text-fg/60">
         {side.record}

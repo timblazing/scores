@@ -265,7 +265,7 @@ export function LastFive({ raw, game }: { raw: Any; game: Game }) {
                       <td className="py-1.5">
                         <Link to={`/${game.league}/game/${e.id}`} className="flex items-center gap-1.5">
                           <span className="w-4 text-faint">{e.atVs}</span>
-                          <Logo src={teamLogo(game.league, e.opponent?.abbreviation, 32)} alt="" size={16} />
+                          <Logo src={teamLogo(game.league, e.opponent?.abbreviation, 32, e.opponent?.id)} alt="" size={16} />
                           {e.opponent?.abbreviation}
                         </Link>
                       </td>
@@ -305,13 +305,13 @@ export function SeasonSeries({ raw, game }: { raw: Any; game: Game }) {
               className={clsx('flex items-center justify-between px-4 py-2.5 text-[14px]', current && 'bg-raised/60')}
             >
               <span className="flex w-20 items-center gap-2">
-                <Logo src={teamLogo(game.league, away?.team?.abbreviation, 32)} alt="" size={20} />
+                <Logo src={teamLogo(game.league, away?.team?.abbreviation, 32, away?.team?.id)} alt="" size={20} />
                 {done || Number(away?.score) > 0 ? <span className="font-semibold tnum">{away?.score}</span> : away?.team?.abbreviation}
               </span>
               <span className="text-[12px] text-muted">{e.statusType?.shortDetail ?? e.status?.type?.shortDetail ?? ''}</span>
               <span className="flex w-20 items-center justify-end gap-2">
                 {done || Number(home?.score) > 0 ? <span className="font-semibold tnum">{home?.score}</span> : home?.team?.abbreviation}
-                <Logo src={teamLogo(game.league, home?.team?.abbreviation, 32)} alt="" size={20} />
+                <Logo src={teamLogo(game.league, home?.team?.abbreviation, 32, home?.team?.id)} alt="" size={20} />
               </span>
             </Link>
           )
@@ -404,7 +404,7 @@ export function ScoringSummary({ raw, game }: { raw: Any; game: Game }) {
       <ul className="divide-y divide-line">
         {plays.map((p) => (
           <li key={p.id} className="flex items-start gap-3 px-4 py-3">
-            <Logo src={teamLogo(game.league, p.team?.abbreviation, 48)} alt={p.team?.abbreviation ?? ''} size={24} />
+            <Logo src={teamLogo(game.league, p.team?.abbreviation, 48, p.team?.id)} alt={p.team?.abbreviation ?? ''} size={24} />
             <div className="min-w-0 flex-1">
               <div className="text-[13px] font-semibold">{p.type?.text}</div>
               <div className="text-[13px] text-muted">{p.text}</div>

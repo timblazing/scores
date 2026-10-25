@@ -12,7 +12,10 @@ function Team({ side, game, align }: { side: Side; game: Game; align: 'left' | '
     <div className={clsx('flex w-16 shrink-0 flex-col items-center gap-1 sm:w-20')}>
       <Logo src={side.logo} alt={side.displayName} size={36} />
       <div className={clsx('flex max-w-full items-center gap-1 text-[12px] leading-tight text-muted', align === 'right' && 'flex-row-reverse')}>
-        <span className="truncate">{side.name}</span>
+        <span className="truncate">
+          {side.rank && <span className="mr-1 text-[10px] text-faint tnum">{side.rank}</span>}
+          {side.name}
+        </span>
         {isFav(game.league, side.id) && <span className="text-[9px] text-fg">★</span>}
         {hasBall && <span className="size-1.5 shrink-0 rounded-full bg-warn" aria-label="Has possession" />}
       </div>

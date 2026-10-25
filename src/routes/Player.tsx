@@ -34,7 +34,7 @@ export function PlayerPage() {
   return (
     <div>
       <header className="relative overflow-hidden pt-safe lg:mt-4 lg:rounded-card" style={{ background: `linear-gradient(160deg, color-mix(in srgb, ${color} 60%, black) 0%, #000 90%)` }}>
-        <Watermark src={a.team?.abbreviation && teamLogo(league, a.team.abbreviation, 400)} />
+        <Watermark src={a.team && teamLogo(league, a.team.abbreviation, 400, a.team.id)} />
         <div className="relative flex items-center px-3 pt-3">
           <Back />
         </div>
@@ -46,7 +46,7 @@ export function PlayerPage() {
             <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[13px] text-fg/70">
               {a.team && (
                 <Link to={`/${league}/team/${a.team.id}`} className="flex items-center gap-1.5 font-medium text-fg">
-                  <Logo src={teamLogo(league, a.team.abbreviation, 40)} alt="" size={18} />
+                  <Logo src={teamLogo(league, a.team.abbreviation, 40, a.team.id)} alt="" size={18} />
                   {a.team.abbreviation}
                 </Link>
               )}
@@ -194,7 +194,7 @@ function GameLog({ league, id }: { league: LeagueId; id: string }) {
                           <Link to={`/${league}/game/${r.eventId}`} className="flex items-center gap-1.5">
                             <span className="w-10 text-faint tnum">{e.gameDate ? new Date(e.gameDate).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' }) : ''}</span>
                             <span className="w-3 text-faint">{e.atVs}</span>
-                            <Logo src={teamLogo(league, e.opponent?.abbreviation, 32)} alt="" size={16} />
+                            <Logo src={teamLogo(league, e.opponent?.abbreviation, 32, e.opponent?.id)} alt="" size={16} />
                             <span className="font-medium">{e.opponent?.abbreviation}</span>
                           </Link>
                         </td>

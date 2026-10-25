@@ -3,7 +3,7 @@ import { Search } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { Card, Empty, ErrorState, FavButton, Loading, Logo, PageHeader } from '@/components/ui'
-import { getTeams, LEAGUE_IDS, LEAGUES, teamLogo, type TeamLite } from '@/lib/espn'
+import { getTeams, LEAGUE_IDS, LEAGUES, teamLogo, type LeagueId, type TeamLite } from '@/lib/espn'
 import { useFavorites } from '@/lib/favorites'
 
 export function TeamsPage() {
@@ -22,7 +22,7 @@ export function TeamsPage() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search NFL and NBA teams"
+            placeholder="Search NFL, college, and NBA teams"
             className="w-full bg-transparent text-[15px] outline-none placeholder:text-faint"
             type="search"
             autoComplete="off"
@@ -73,11 +73,11 @@ export function TeamsPage() {
   )
 }
 
-function TeamItem({ league, id, abbr, name, sub }: { league: 'nfl' | 'nba'; id: string; abbr: string; name: string; sub?: string }) {
+function TeamItem({ league, id, abbr, name, sub }: { league: LeagueId; id: string; abbr: string; name: string; sub?: string }) {
   return (
     <li className="flex items-center">
       <Link to={`/${league}/team/${id}`} className="flex min-w-0 flex-1 items-center gap-3 py-2.5 pl-4">
-        <Logo src={teamLogo(league, abbr, 64)} alt="" size={28} />
+        <Logo src={teamLogo(league, abbr, 64, id)} alt="" size={28} />
         <span className="truncate text-[15px] font-medium">{name}</span>
         {sub && <span className="text-[12px] text-faint">{sub}</span>}
       </Link>

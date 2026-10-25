@@ -3,7 +3,7 @@ import clsx from 'clsx'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { Card, ErrorState, Loading, Logo, PageHeader, Segmented } from '@/components/ui'
-import { getStandings, type LeagueId, type StandingGroup } from '@/lib/espn'
+import { getStandings, LEAGUE_IDS, LEAGUES, type LeagueId, type StandingGroup } from '@/lib/espn'
 import { useFavorites } from '@/lib/favorites'
 import { useLeagueParam } from '@/lib/useLeague'
 
@@ -17,6 +17,16 @@ const COLS: Record<LeagueId, { key: string; label: string; wide?: boolean }[]> =
     { key: 'pointsAgainst', label: 'PA', wide: true },
     { key: 'differential', label: 'DIFF', wide: true },
     { key: 'vs. Div.', label: 'DIV', wide: true },
+    { key: 'streak', label: 'STRK' },
+  ],
+  cfb: [
+    { key: 'vs. Conf.', label: 'CONF' },
+    { key: 'overall', label: 'OVR' },
+    { key: 'pointsFor', label: 'PF', wide: true },
+    { key: 'pointsAgainst', label: 'PA', wide: true },
+    { key: 'Home', label: 'HOME', wide: true },
+    { key: 'Away', label: 'AWAY', wide: true },
+    { key: 'vs AP Top 25', label: 'VS AP', wide: true },
     { key: 'streak', label: 'STRK' },
   ],
   nba: [
@@ -46,7 +56,7 @@ export function StandingsPage() {
         {q.isError && <ErrorState error={q.error} retry={q.refetch} />}
         {q.data && (
           <>
-            <Segmented value={String(conf)} onChange={(v) => setConf(Number(v))} options={q.data.map((c, i) => ({ value: String(i), label: c.short }))} />
+            <Segmented className="no-scrollbar overflow-x-auto" value={String(conf)} onChange={(v) => setConf(Number(v))} options={q.data.map((c, i) => ({ value: String(i), label: c.short }))} />
             <Conference conf={q.data[conf]} league={league} />
           </>
         )}
@@ -58,13 +68,10 @@ export function StandingsPage() {
 export function LeagueToggle({ league, onChange }: { league: LeagueId; onChange: (l: LeagueId) => void }) {
   return (
     <Segmented
-      className="w-32"
+      className="w-48"
       value={league}
       onChange={onChange}
-      options={[
-        { value: 'nfl', label: 'NFL' },
-        { value: 'nba', label: 'NBA' },
-      ]}
+      options={LEAGUE_IDS.map((l) => ({ value: l, label: LEAGUES[l].name }))}
     />
   )
 }
@@ -107,7 +114,7 @@ function Conference({ conf, league }: { conf?: StandingGroup; league: LeagueId }
                         </Link>
                       </td>
                       {cols.map((c) => (
-                        <td key={c.key} className={clsx('px-2 py-2 text-center text-muted tnum last:pr-4', c.wide && 'hidden sm:table-cell', c.key === 'winPercent' && 'text-fg')}>
+                        <td key={c.key} className={clsx('px-2 py-2 text-center whitespace-nowrap text-muted tnum last:pr-4', c.wide && 'hidden sm:table-cell', (c.key === 'winPercent' || c.key === 'vs. Conf.') && 'text-fg')}>
                           {r.stats[c.key] ?? '-'}
                         </td>
                       ))}

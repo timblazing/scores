@@ -12,7 +12,7 @@ interface Ctx {
 
 const HOSTS = { site: 'site.api.espn.com' } as const
 
-const L = '(?:football/nfl|basketball/nba)'
+const L = '(?:football/nfl|football/college-football|basketball/nba)'
 const MIN = 60
 
 // [host, path pattern, TTL seconds]. `live` TTLs drop when a game is in progress.
@@ -25,7 +25,7 @@ const ROUTES: [keyof typeof HOSTS, RegExp, number | 'live'][] = [
 ]
 
 // Query params the client sends. Anything else is dropped so it can't fragment the cache.
-const PARAMS = new Set(['dates', 'week', 'seasontype', 'limit', 'event', 'level', 'team'])
+const PARAMS = new Set(['dates', 'week', 'seasontype', 'limit', 'event', 'level', 'team', 'groups', 'group'])
 
 const LIVE_TTL = 10
 const IDLE_TTL = MIN

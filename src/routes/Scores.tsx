@@ -6,7 +6,7 @@ import { useSearchParams } from 'react-router'
 import { GameList } from '@/components/GameRow'
 import { SearchTrigger } from '@/components/Search'
 import { Empty, ErrorState, Loading, PageHeader, Segmented } from '@/components/ui'
-import { getScoreboard, LEAGUES, type Game, type LeagueId, type Scoreboard } from '@/lib/espn'
+import { getScoreboard, LEAGUE_IDS, LEAGUES, type Game, type LeagueId, type Scoreboard } from '@/lib/espn'
 import { useFavorites } from '@/lib/favorites'
 import { addDays, dayLabel, fromYmd, shortDate, todayYmd, ymd } from '@/lib/format'
 
@@ -19,7 +19,8 @@ const liveInterval = (q: { data?: Scoreboard | Scoreboard[] }) => {
 
 export function ScoresPage() {
   const [params, setParams] = useSearchParams()
-  const view = (params.get('league') as View) || 'all'
+  const param = params.get('league')
+  const view: View = LEAGUE_IDS.find((l) => l === param) ?? 'all'
   const date = params.get('d') || todayYmd()
 
   const update = (patch: Record<string, string | null>) => {
@@ -32,25 +33,24 @@ export function ScoresPage() {
     <div>
       <PageHeader title="Scores">
         <Segmented
-          className="w-48"
+          className="w-64"
           value={view}
           onChange={(v) => update({ league: v === 'all' ? null : v, w: null, st: null })}
           options={[
             { value: 'all', label: 'All' },
-            { value: 'nfl', label: 'NFL' },
-            { value: 'nba', label: 'NBA' },
+            ...LEAGUE_IDS.map((l) => ({ value: l, label: LEAGUES[l].name })),
           ]}
         />
       </PageHeader>
       <div className="px-3 pb-3 lg:hidden">
         <SearchTrigger />
       </div>
-      {view === 'nfl' ? (
-        <NflWeek week={params.get('w')} seasonType={params.get('st')} onWeek={(w, st) => update({ w, st })} />
+      {view === 'nfl' || view === 'cfb' ? (
+        <WeekGames key={view} league={view} week={params.get('w')} seasonType={params.get('st')} onWeek={(w, st) => update({ w, st })} />
       ) : (
         <>
           <DateStrip value={date} onChange={(d) => update({ d: d === todayYmd() ? null : d })} />
-          <DayGames date={date} leagues={view === 'all' ? ['nfl', 'nba'] : [view]} />
+          <DayGames date={date} leagues={view === 'all' ? LEAGUE_IDS : [view]} />
         </>
       )}
     </div>
@@ -132,7 +132,7 @@ function DayGames({ date, leagues }: { date: string; leagues: LeagueId[] }) {
 
   return (
     <div className="space-y-5 px-3 lg:px-0">
-      {!all.length && <Empty>No {leagues.length > 1 ? 'NFL or NBA' : LEAGUES[leagues[0]].name} games {dayLabel(date) === 'Today' ? 'today' : `on ${shortDate(date)}`}.</Empty>}
+      {!all.length && <Empty>No {leagues.length > 1 ? '' : `${LEAGUES[leagues[0]].name} `}games {dayLabel(date) === 'Today' ? 'today' : `on ${shortDate(date)}`}.</Empty>}
       {mine.length > 0 && <Group title="My Teams" games={mine} />}
       {leagues.map((l) => {
         const games = rest.filter((g) => g.league === l)
@@ -151,12 +151,22 @@ function Group({ title, games }: { title?: string; games: Game[] }) {
   )
 }
 
-function NflWeek({ week, seasonType, onWeek }: { week: string | null; seasonType: string | null; onWeek: (w: string, st: string) => void }) {
+function WeekGames({
+  league,
+  week,
+  seasonType,
+  onWeek,
+}: {
+  league: LeagueId
+  week: string | null
+  seasonType: string | null
+  onWeek: (w: string, st: string) => void
+}) {
   // The default call tells us the current week and the full calendar.
-  const current = useQuery({ queryKey: ['sb', 'nfl', 'current'], queryFn: () => getScoreboard('nfl'), refetchInterval: (q) => liveInterval(q.state) })
+  const current = useQuery({ queryKey: ['sb', league, 'current'], queryFn: () => getScoreboard(league), refetchInterval: (q) => liveInterval(q.state) })
   const selected = useQuery({
-    queryKey: ['sb', 'nfl', week, seasonType, current.data?.year],
-    queryFn: () => getScoreboard('nfl', { week: week!, seasonType: seasonType ?? '2', year: current.data?.year }),
+    queryKey: ['sb', league, week, seasonType, current.data?.year],
+    queryFn: () => getScoreboard(league, { week: week!, seasonType: seasonType ?? '2', year: current.data?.year }),
     enabled: !!week && !!current.data,
     refetchInterval: (q) => liveInterval(q.state),
   })

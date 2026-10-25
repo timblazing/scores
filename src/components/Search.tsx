@@ -174,7 +174,7 @@ export function SearchDialog() {
     >
       {i.kind === 'team' ? (
         <span className="grid size-9 place-items-center">
-          <Logo src={teamLogo(i.league, i.abbr, 64)} alt="" size={28} />
+          <Logo src={teamLogo(i.league, i.abbr, 64, i.id)} alt="" size={28} />
         </span>
       ) : (
         <Headshot src={i.headshot} alt="" size={36} />

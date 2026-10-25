@@ -1,6 +1,6 @@
 # Scores
 
-A minimal, dark ESPN alternative for **NFL** and **NBA**: live scores, game detail (box score, play-by-play, win probability, odds), standings, teams, players, and news.
+A minimal, dark ESPN alternative for **NFL**, **college football (FBS)**, and **NBA**: live scores, game detail (box score, play-by-play, win probability, odds), standings, teams, players, and news.
 
 Live at **https://scores.blasingame.dev**.
 
