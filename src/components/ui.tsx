@@ -121,8 +121,13 @@ export function FavButton({ fav, className, size = 18 }: { fav: Favorite; classN
   )
 }
 
-export function LiveDot() {
-  return <span className="live-dot inline-block size-1.5 rounded-full bg-live" aria-hidden />
+export function Football({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 14" className={className} aria-hidden>
+      <ellipse cx="12" cy="7" rx="11.5" ry="6.5" fill="#a5532f" />
+      <path d="M7.5 7h9M10 5.5v3M12 5.5v3M14 5.5v3" stroke="#fff" strokeWidth="1.1" strokeLinecap="round" />
+    </svg>
+  )
 }
 
 export function Loading({ rows = 4 }: { rows?: number }) {

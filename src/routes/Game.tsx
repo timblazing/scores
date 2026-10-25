@@ -19,7 +19,7 @@ import {
 } from '@/components/game/sections'
 import { WinChart } from '@/components/game/WinChart'
 import { Back } from '@/components/Layout'
-import { Card, ErrorState, FavButton, LiveDot, Loading, Logo, Tabs, Watermark } from '@/components/ui'
+import { Card, ErrorState, FavButton, Loading, Logo, Tabs, Watermark } from '@/components/ui'
 import { getSummary, LEAGUES, teamLogo, type Game, type LeagueId, type Side } from '@/lib/espn'
 import { dateTime, readable, time } from '@/lib/format'
 
@@ -119,10 +119,7 @@ function Header({ game }: { game: Game }) {
           <BigScore side={game.away} other={game.home} game={game} />
           <div className="min-w-20 text-center">
             {game.state === 'in' ? (
-              <span className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-live">
-                <LiveDot />
-                {game.shortDetail.replace(/ - /, ' · ')}
-              </span>
+              <span className="text-[14px] font-semibold text-live">{game.shortDetail.replace(/ - /, ' · ')}</span>
             ) : game.state === 'post' ? (
               <span className="text-[14px] font-semibold">{game.shortDetail}</span>
             ) : (

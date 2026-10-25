@@ -67,22 +67,6 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-@keyframes pulse-dot {
-  50% {
-    opacity: 0.35;
-  }
-}
-
-.live-dot {
-  animation: pulse-dot 1.6s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .live-dot {
-    animation: none;
-  }
-}
-
 /* Lock page scroll behind the search dialog. */
 html:has(dialog[open]) {
   overflow: hidden;
