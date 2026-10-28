@@ -1,5 +1,5 @@
-import { Host, Picker, Text as SUIText } from '@expo/ui/swift-ui'
-import { pickerStyle, tag } from '@expo/ui/swift-ui/modifiers'
+import { HStack, Host, Image as SUIImage, Menu, Picker, Text as SUIText } from '@expo/ui/swift-ui'
+import { font, padding, pickerStyle, tag } from '@expo/ui/swift-ui/modifiers'
 import { Image } from 'expo-image'
 import * as Haptics from 'expo-haptics'
 import { SymbolView } from 'expo-symbols'
@@ -162,6 +162,64 @@ export function Segmented<T extends string>({
         ))}
       </Picker>
     </Host>
+  )
+}
+
+/** Native SwiftUI menu for the header that reads "Label ⌄" and lists the options with a checkmark on the current one. */
+export function HeaderMenu<T extends string>({ value, onChange, options }: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[] }) {
+  return (
+    <Host matchContents colorScheme="dark">
+      <Menu
+        label={
+          <HStack spacing={5} modifiers={[padding({ horizontal: 12, vertical: 6 })]}>
+            <SUIText modifiers={[font({ size: 17, weight: 'semibold' })]}>{options.find((o) => o.value === value)?.label ?? ''}</SUIText>
+            <SUIImage systemName="chevron.down" size={13} color={colors.muted} />
+          </HStack>
+        }
+      >
+        <Picker
+          label=""
+          selection={value}
+          onSelectionChange={(v) => {
+            Haptics.selectionAsync()
+            onChange(v as T)
+          }}
+        >
+          {options.map((o) => (
+            <SUIText key={o.value} modifiers={[tag(o.value)]}>
+              {o.label}
+            </SUIText>
+          ))}
+        </Picker>
+      </Menu>
+    </Host>
+  )
+}
+
+/** Plain text tabs with an underline on the active one, matching the web app's tabs (no glass, no pill). */
+export function Tabs<T extends string>({ value, onChange, options }: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[] }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 12 }}>
+      {options.map((o) => {
+        const on = o.value === value
+        return (
+          <Pressable
+            key={o.value}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+            onPress={() => {
+              if (on) return
+              Haptics.selectionAsync()
+              onChange(o.value)
+            }}
+            style={{ paddingVertical: 6, borderBottomWidth: 2, borderBottomColor: on ? colors.fg : 'transparent' }}
+          >
+            <Text style={{ fontSize: 14, fontWeight: '500', color: on ? colors.fg : colors.muted }}>{o.label}</Text>
+          </Pressable>
+        )
+      })}
+    </View>
   )
 }
 

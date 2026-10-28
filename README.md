@@ -5,7 +5,7 @@ A minimal, dark ESPN alternative for **NFL**, **college football (FBS)**, and **
 Live at **https://scores.blasingame.dev**.
 
 - Web: Vite + React + TypeScript + Tailwind v4, TanStack Query, React Router
-- iOS: a native [Expo](https://expo.dev) / React Native app (`mobile/`) with iOS 26 Liquid Glass tabs, headers, menus and segmented controls. The older Capacitor wrapper of the web build (`ios/`) is superseded.
+- iOS: a native [Expo](https://expo.dev) / React Native app (`mobile/`) with an iOS 26 Liquid Glass tab bar and native menus, plus a Fantasy tab for Sleeper fantasy football. The older Capacitor wrapper of the web build (`ios/`) is superseded.
 - Data: ESPN's public, unofficial JSON endpoints. On the web, `site.api.espn.com` goes through an edge-caching Worker (`worker/index.ts`, `/api/espn/site/*`); athletes and search, plus everything in the iOS app, call ESPN directly. Reference: [pseudo-r/Public-ESPN-API](https://github.com/pseudo-r/Public-ESPN-API). Not affiliated with ESPN.
 
 ## Develop
@@ -26,7 +26,7 @@ Config lives in `cloudflare.config.ts`: the ESPN cache Worker runs only for `/ap
 
 ## iOS app: Expo (`mobile/`)
 
-Expo SDK 58, Expo Router native tabs (Home, Favorites, search), SwiftUI controls from `@expo/ui`. `mobile/ios/` is generated (Continuous Native Generation) and ignored by Git; configure native settings in `mobile/app.json`.
+Expo SDK 58, Expo Router native tabs (Home, Fantasy, search), SwiftUI controls from `@expo/ui`. `mobile/ios/` is generated (Continuous Native Generation) and ignored by Git; configure native settings in `mobile/app.json`.
 
 ```sh
 cd mobile

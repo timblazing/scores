@@ -170,6 +170,17 @@ function parseSide(c: Any, league: LeagueId): Side {
   }
 }
 
+const broadcastNames = (list: Any[]): string[] => list.flatMap((b: Any) => b.names ?? (b.media?.shortName ? [b.media.shortName] : []))
+
+/** One channel per NBA game: the national broadcast, else League Pass, else the first local feed. */
+function primaryBroadcast(comp: Any): string | undefined {
+  const list: Any[] = comp.broadcasts ?? []
+  const national = broadcastNames(list.filter((b) => b.market === 'national'))[0]
+  const all = broadcastNames(list)
+  const name = national ?? all.find((n) => /league pass/i.test(n)) ?? comp.broadcast ?? all[0]
+  return name?.replace(/^NBA League Pass$/i, 'League Pass')
+}
+
 export function parseEvent(e: Any, league: LeagueId): Game {
   const comp = e.competitions?.[0] ?? {}
   const status = comp.status ?? e.status ?? {}
@@ -177,9 +188,7 @@ export function parseEvent(e: Any, league: LeagueId): Game {
   const cs = comp.competitors ?? []
   const home = cs.find((c: Any) => c.homeAway === 'home') ?? cs[0]
   const away = cs.find((c: Any) => c.homeAway === 'away') ?? cs[1]
-  const bc =
-    comp.broadcast ||
-    (comp.broadcasts ?? []).flatMap((b: Any) => b.names ?? (b.media?.shortName ? [b.media.shortName] : [])).join(', ')
+  const bc = league === 'nba' ? primaryBroadcast(comp) : comp.broadcast || broadcastNames(comp.broadcasts ?? []).join(', ')
   const sit = comp.situation
   return {
     id: String(e.id),
