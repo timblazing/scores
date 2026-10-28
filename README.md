@@ -38,14 +38,17 @@ npx expo run:ios              # dev build on the simulator
 
 ### Testing in the simulator
 
-Test on the **iPhone 16 Pro (iOS 26.2)** simulator (UDID `20D6DCB8-60E9-413F-8EBA-CFCFB9EB3EE3`). The owner's phone is an iPhone 16 Pro, which has the same 402×874 pt screen as the 17 Pro. Avoid the stock "iPhone 16 Pro" on iOS 18.3: Liquid Glass tabs and the native search tab need iOS 26+. The phone runs iOS 27.x, but no iOS 27 simulator runtime is installed (`xcodebuild -downloadPlatform iOS` would add one, a multi-GB download; ask first).
+Match the owner's phone: an iPhone 16 Pro on the newest iOS (currently the iOS 27.2 release candidate).
+
+- **Preferred:** "iPhone 16 Pro" on **iOS 27.0**, UDID `0C0222EF-2E18-4D96-A500-32050E170333`. Xcode 27.1's iOS 27.1 runtime only supports the iPhone Duo, so 27.0 is the newest runtime for an iPhone 16 Pro. When Xcode ships a newer runtime that supports it (`xcodebuild -downloadPlatform iOS`), create a fresh one with `xcrun simctl create "iPhone 16 Pro" com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro <runtime id>` and update this UDID.
+- **T3 Code's Device panel** lists one simulator per model and didn't show this one in the session it was created; it listed the stock iPhone 16 Pro on iOS 18.3 instead. Leave that one alone: it holds another of the owner's apps, and iOS 18 lacks Liquid Glass. If the panel still doesn't offer the iOS 27 iPhone 16 Pro, use the **iPhone 18 Pro (iOS 27.0)** (`87CE0F80-982E-4EC3-B15A-5977E04D8450`), which has the same 402 pt width, or the iPhone 17 Pro (iOS 26.2).
 
 A Release build runs the embedded JS bundle, so Metro isn't needed:
 
 ```sh
 cd mobile/ios
 xcodebuild -workspace Scores.xcworkspace -scheme Scores -configuration Release -sdk iphonesimulator \
-  -destination 'id=20D6DCB8-60E9-413F-8EBA-CFCFB9EB3EE3' -derivedDataPath ../build/sim build -quiet
+  -destination 'id=0C0222EF-2E18-4D96-A500-32050E170333' -derivedDataPath ../build/sim build -quiet
 # app: mobile/build/sim/Build/Products/Release-iphonesimulator/Scores.app (bundle ID dev.blasingame.scores)
 ```
 

@@ -42,10 +42,20 @@ Docs: https://docs.expo.dev/eas/index.md
 
 ## This project: testing on the simulator
 
-- Build and device setup: README → "Testing in the simulator". Use the iPhone 16 Pro (iOS 26.2) simulator; the owner's phone is an iPhone 16 Pro on iOS 27.x.
+- Build and device setup: README → "Testing in the simulator". Use the iPhone 16 Pro on iOS 27 (or the README's fallback if the Device panel doesn't list it); the owner's phone is an iPhone 16 Pro on the latest iOS 27 release.
 - The owner can't see what you tested unless it's in the Device panel: open it with `device_open`, then install, launch, tap, type, swipe and take screenshots with the `agent-device` command it returns, not `simctl`/`idb`.
 - `agent-device snapshot -i` can lag after typing into the native search bar: it showed the previous query's results while the screen had the new ones. Confirm results with `device_screenshot` before calling something a bug.
 - `@eN` refs go stale when the screen changes. Re-snapshot before each `press`/`fill`; a stale ref once tapped a search result and navigated away.
 - Coordinates are in points (402×874). `device_screenshot` images are 3× pixels, so divide by 3, or by about 2.29 for the 920 px-wide preview.
 - Swipe-back: `agent-device swipe 2 400 330 400 --pause-ms 300`. The native league menu opens with a plain `press` on the header popup button.
 - The simulator can't show how scrolling feels, the Dynamic Island area, push or live-game timing; ask the owner to check those on the phone. Changes only reach the phone through a new IPA installed via SideStore (README).
+
+## This project: design work with the owner
+
+The owner wants to compare design options as simulator screenshots before anything is installed on the phone. For each design question:
+
+1. Build each option (a branch, or a temporary toggle in code), install it on the simulator from the README, and take the same screen in each with `agent-device screenshot <abs path> --pixel-density 3`.
+2. Show them side by side in chat (`html_preview` + `html_render` in T3 Code), labeled A / B / C, with a line per option on what differs.
+3. Let the owner pick, then build only the chosen option properly and remove the rest. Keep the screenshots out of Git unless they're for a PR (`ui-evidence`).
+
+Keep it to a few options per question, and cover both the Home scores list and one detail page when a change affects both.
