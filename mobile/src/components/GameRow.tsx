@@ -56,7 +56,7 @@ function Status({ game }: { game: Game }) {
       <Text style={{ fontSize: 14, fontWeight: '600', textAlign: 'center' }}>
         {game.timeTBD ? 'TBD' : /postponed|canceled|delayed/i.test(game.detail) ? game.shortDetail : time(game.date)}
       </Text>
-      {game.odds?.details ? <Text style={{ fontSize: 11, color: colors.faint, marginTop: 2 }}>{game.odds.details}</Text> : null}
+      {game.odds?.details ? <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>{game.odds.details}</Text> : null}
     </>
   )
 }
@@ -70,7 +70,7 @@ export function GameRow({ game }: { game: Game }) {
         <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 2 }}>
           <Status game={game} />
           {game.broadcast && game.state === 'pre' ? (
-            <Text numberOfLines={1} style={{ fontSize: 11, color: colors.faint, marginTop: 2 }}>
+            <Text numberOfLines={1} style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>
               {game.broadcast}
             </Text>
           ) : null}
