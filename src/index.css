@@ -67,6 +67,36 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* Status bar backdrop (phone): fades content out under the clock instead of a hard black bar. */
+.status-edge {
+  height: env(safe-area-inset-top);
+  background: linear-gradient(to bottom, rgb(0 0 0 / 0.7), rgb(0 0 0 / 0));
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  mask-image: linear-gradient(to bottom, black 40%, transparent);
+}
+
+/* Inside the iOS app: system font, no scrollbars, rubber-band scrolling, no text selection on UI. */
+html.native {
+  --font-sans: -apple-system, system-ui, sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+html.native body {
+  overscroll-behavior-y: auto;
+}
+html.native * {
+  scrollbar-width: none;
+}
+html.native *::-webkit-scrollbar {
+  display: none;
+}
+html.native :is(input, textarea) {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 /* Lock page scroll behind the search dialog. */
 html:has(dialog[open]) {
   overflow: hidden;

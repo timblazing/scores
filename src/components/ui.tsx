@@ -165,7 +165,7 @@ export function Empty({ children }: { children: ReactNode }) {
 
 export function PageHeader({ title, children }: { title: ReactNode; children?: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3 px-4 pt-4 pb-3 lg:px-0">
+    <div className="flex items-center justify-between gap-3 px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-3 lg:px-0 lg:pt-4">
       <h1 className="text-[28px] font-bold tracking-tight">{title}</h1>
       {children}
     </div>

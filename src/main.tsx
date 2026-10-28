@@ -11,10 +11,11 @@ import { StandingsPage } from './routes/Standings'
 import { TeamPage } from './routes/Team'
 import { TeamsPage } from './routes/Teams'
 import './index.css'
-import { Capacitor } from '@capacitor/core'
 import { StatusBar, Style } from '@capacitor/status-bar'
+import { isNative } from './lib/native'
 
-if (Capacitor.isNativePlatform()) {
+if (isNative) {
+  document.documentElement.classList.add('native')
   StatusBar.setStyle({ style: Style.Dark }).catch(() => {})
 }
 

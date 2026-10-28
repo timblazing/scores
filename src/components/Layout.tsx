@@ -2,7 +2,8 @@ import clsx from 'clsx'
 import { CalendarDays, ListOrdered, Newspaper, Shield } from 'lucide-react'
 import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
-import { SearchDialog, SearchTrigger } from './Search'
+import { hasNativeTabs, useNativeTabs } from '@/lib/native'
+import { openSearch, SearchDialog, SearchTrigger } from './Search'
 
 const NAV = [
   { to: '/', label: 'Scores', icon: CalendarDays, end: true },
@@ -14,12 +15,14 @@ const NAV = [
 export function Layout() {
   const { pathname } = useLocation()
   useEffect(() => {
-    window.scrollTo(0, 0)
+    if (!hasNativeTabs) window.scrollTo(0, 0)
   }, [pathname])
+  useNativeTabs(openSearch)
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-6xl lg:gap-8 lg:px-6">
-      <div className="fixed inset-x-0 top-0 z-50 h-[env(safe-area-inset-top)] bg-bg" aria-hidden />
+      {/* Status bar backdrop: a soft scroll-edge fade rather than a hard bar, so headers can run underneath. */}
+      <div className="status-edge pointer-events-none fixed inset-x-0 top-0 z-50 lg:hidden" aria-hidden />
       <aside className="sticky top-0 hidden h-dvh w-52 shrink-0 flex-col py-6 lg:flex">
         <NavLink to="/" className="mb-8 flex items-center gap-2 px-3 text-lg font-bold tracking-tight">
           <img src="/icon.svg" alt="" className="size-7" />
@@ -46,11 +49,17 @@ export function Layout() {
         </nav>
       </aside>
 
-      <main className="min-w-0 flex-1 pt-safe pb-[calc(76px+env(safe-area-inset-bottom))] lg:pt-2 lg:pb-12">
+      <main
+        className={clsx(
+          'min-w-0 flex-1 lg:pt-2 lg:pb-12',
+          // With native tabs the web view's bottom inset already includes the tab bar.
+          hasNativeTabs ? 'pb-[calc(env(safe-area-inset-bottom)+12px)]' : 'pb-[calc(76px+env(safe-area-inset-bottom))]',
+        )}
+      >
         <Outlet />
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-bg/85 pb-safe backdrop-blur-xl lg:hidden">
+      <nav className={clsx('fixed inset-x-0 bottom-0 z-40 border-t border-line bg-bg/85 pb-safe backdrop-blur-xl lg:hidden', hasNativeTabs && 'hidden')}>
         <div className="mx-auto flex max-w-lg">
           {NAV.map(({ to, label, icon: Icon, end }) => (
             <NavLink

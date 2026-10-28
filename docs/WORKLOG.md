@@ -154,3 +154,12 @@ Gotchas:
 - Read this work log and README first. Shared React UI lives in `src/`; native wrapper/config lives in `ios/` and `capacitor.config.ts`. Native requests go directly to ESPN, as documented above.
 - For each native update: typecheck, `pnpm sync`, archive, package with the corrected ZIP procedure, transfer, and install through the now-working SideStore setup. Recheck the connected device and installed SideStore identifier instead of assuming prior connection state.
 - Validate requested changes on the physical phone; successful installation alone is not visual or functional acceptance. Do not reset the working SideStore authentication/pairing as a routine build step.
+
+## Session 4 — 2026-10-27 — Native iOS feel
+
+- **System tab bar** (`ios/App/App/NativeTabs.swift`): on iOS 18+ the root is a `UITabBarController` (Liquid Glass on iOS 26+) with Scores/Standings/Teams/News plus a `UISearchTab`. A single `ScoresBridgeViewController` web view moves into the selected tab's container. Native → web: `nativetab` CustomEvent (`{index, reselect}` or `{search: true}`). Web → native: local `NativeTabs` plugin (`select`, `setHidden`). The shell sets `window.__NATIVE_TABS__` at document start; the web hides its own bottom nav when it's present. iOS < 18 keeps the web nav.
+- **Tab behavior** (`src/lib/native.ts` `useNativeTabs`): each tab remembers its last page and scroll position; switching uses `replace` so Back never crosses tabs; tapping the current tab pops to root, or scrolls to top at root. The search tab opens the search sheet and hides the tab bar while it's open.
+- **Native polish**: no scroll indicators (native + CSS), edge-swipe back, rubber-band scrolling, SF Pro instead of DM Sans, no text selection/callouts outside inputs (`html.native`). The status-bar area is a soft scroll-edge fade instead of a solid black bar.
+- **Safe area fix**: `main` and the hero headers both added `pt-safe`, so game/team/player headers sat a full status-bar height too low. `main` no longer pads; `PageHeader` and loading states do.
+- **Team names**: score rows and the game header use abbreviations (POR, LAL) instead of truncated nicknames. Long broadcast lists clamp to two lines.
+- Verified in the iOS 26.2 simulator (iPhone 17 Pro) with a temporary scripted run through tab switch → back → game → other tab → back (game restored) → reselect (pops to root). Release archive succeeded; `ios/App/build/Scores.ipa` repacked clean (no `._` entries). Not yet checked on the physical phone.

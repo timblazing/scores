@@ -17,8 +17,8 @@ export function PlayerPage() {
   const overview = useQuery({ queryKey: ['athlete-ov', league, id], queryFn: () => getAthleteOverview(league, id), staleTime: 5 * 60_000 })
   const [tab, setTab] = useState<Tab>('overview')
 
-  if (athlete.isPending) return <div className="p-4 lg:px-0"><Loading /></div>
-  if (athlete.isError) return <div className="p-4 lg:px-0"><ErrorState error={athlete.error} retry={athlete.refetch} /></div>
+  if (athlete.isPending) return <div className="p-4 pt-[calc(env(safe-area-inset-top)+1rem)] lg:px-0"><Loading /></div>
+  if (athlete.isError) return <div className="p-4 pt-[calc(env(safe-area-inset-top)+1rem)] lg:px-0"><ErrorState error={athlete.error} retry={athlete.refetch} /></div>
 
   const a = athlete.data
   const color = readable(a.team?.color ? `#${a.team.color}` : '#333333')

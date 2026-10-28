@@ -36,12 +36,12 @@ export function GamePage() {
 
   if (q.isPending)
     return (
-      <div className="space-y-3 p-4 lg:px-0">
+      <div className="space-y-3 p-4 pt-[calc(env(safe-area-inset-top)+1rem)] lg:px-0">
         <div className="h-44 animate-pulse rounded-card bg-surface" />
         <Loading />
       </div>
     )
-  if (q.isError) return <div className="p-4 lg:px-0"><ErrorState error={q.error} retry={q.refetch} /></div>
+  if (q.isError) return <div className="p-4 pt-[calc(env(safe-area-inset-top)+1rem)] lg:px-0"><ErrorState error={q.error} retry={q.refetch} /></div>
 
   const { game, raw } = q.data
   const started = game.state !== 'pre'
@@ -108,7 +108,7 @@ function Header({ game }: { game: Game }) {
     >
       <Watermark src={teamLogo(game.league, game.away.abbr, 400, game.away.id)} side="left" />
       <Watermark src={teamLogo(game.league, game.home.abbr, 400, game.home.id)} side="right" />
-      <div className="relative flex items-center justify-between px-3 pt-3">
+      <div className="relative flex items-center justify-between px-3 pt-1 lg:pt-3">
         <Back />
         <span className="text-[12px] font-medium text-fg/70">{game.note ?? LEAGUES[game.league].name}</span>
         <span className="size-9" />
@@ -128,7 +128,7 @@ function Header({ game }: { game: Game }) {
                 <div className="text-[12px] text-fg/60">{dateTime(game.date).split(',').slice(0, 2).join(',')}</div>
               </>
             )}
-            {game.broadcast && <div className="mt-1 text-[11px] text-fg/60">{game.broadcast}</div>}
+            {game.broadcast && <div className="mt-1 line-clamp-2 text-[11px] text-fg/60">{game.broadcast}</div>}
           </div>
           <BigScore side={game.home} other={game.away} game={game} align="right" />
         </div>
@@ -143,9 +143,9 @@ function HeaderTeam({ side, game }: { side: Side; game: Game }) {
     <div className="relative flex w-20 flex-col items-center gap-1.5 sm:w-28">
       <Link to={`/${game.league}/team/${side.id}`} className="flex flex-col items-center gap-1.5">
         <Logo src={side.logo} alt={side.displayName} size={56} className="drop-shadow-lg sm:size-16" />
-        <span className="text-center text-[13px] leading-tight font-semibold">
+        <span className="text-center text-[14px] leading-tight font-semibold whitespace-nowrap">
           {side.rank && <span className="mr-1 text-[11px] font-normal text-fg/60 tnum">{side.rank}</span>}
-          {side.name}
+          {side.abbr || side.name}
         </span>
       </Link>
       <div className="flex items-center text-[12px] text-fg/60">

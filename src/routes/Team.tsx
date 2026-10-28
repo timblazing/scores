@@ -17,8 +17,8 @@ export function TeamPage() {
   const team = useQuery({ queryKey: ['schedule', league, id, '2'], queryFn: () => getTeamSchedule(league, id, '2'), staleTime: 60_000 })
   const [tab, setTab] = useState<Tab>('schedule')
 
-  if (team.isPending) return <div className="p-4 lg:px-0"><Loading /></div>
-  if (team.isError) return <div className="p-4 lg:px-0"><ErrorState error={team.error} retry={team.refetch} /></div>
+  if (team.isPending) return <div className="p-4 pt-[calc(env(safe-area-inset-top)+1rem)] lg:px-0"><Loading /></div>
+  if (team.isError) return <div className="p-4 pt-[calc(env(safe-area-inset-top)+1rem)] lg:px-0"><ErrorState error={team.error} retry={team.refetch} /></div>
 
   const t = team.data.team
   const color = readable(t.color)

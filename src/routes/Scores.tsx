@@ -8,6 +8,7 @@ import { SearchTrigger } from '@/components/Search'
 import { Empty, ErrorState, Loading, PageHeader, Segmented } from '@/components/ui'
 import { getScoreboard, LEAGUE_IDS, LEAGUES, type Game, type LeagueId, type Scoreboard } from '@/lib/espn'
 import { useFavorites } from '@/lib/favorites'
+import { hasNativeTabs } from '@/lib/native'
 import { addDays, dayLabel, fromYmd, shortDate, todayYmd, ymd } from '@/lib/format'
 
 type View = 'all' | LeagueId
@@ -42,7 +43,7 @@ export function ScoresPage() {
           ]}
         />
       </PageHeader>
-      <div className="px-3 pb-3 lg:hidden">
+      <div className={clsx('px-3 pb-3 lg:hidden', hasNativeTabs && 'hidden')}>
         <SearchTrigger />
       </div>
       {view === 'nfl' || view === 'cfb' ? (

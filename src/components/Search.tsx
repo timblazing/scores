@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from 'react-router'
 import { Headshot, Logo } from '@/components/ui'
 import { getTeams, LEAGUE_IDS, LEAGUES, searchPlayers, teamLogo, type LeagueId, type TeamLite } from '@/lib/espn'
 import { useFavorites } from '@/lib/favorites'
+import { setNativeTabsHidden } from '@/lib/native'
 
 const OPEN_EVENT = 'scores:search'
 
@@ -72,6 +73,8 @@ export function SearchDialog() {
     input.current?.focus()
   }
   const close = () => ref.current?.close()
+
+  useEffect(() => setNativeTabsHidden(open), [open])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
