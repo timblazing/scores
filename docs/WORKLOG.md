@@ -154,3 +154,11 @@ Gotchas:
 - Read this work log and README first. Shared React UI lives in `src/`; native wrapper/config lives in `ios/` and `capacitor.config.ts`. Native requests go directly to ESPN, as documented above.
 - For each native update: typecheck, `pnpm sync`, archive, package with the corrected ZIP procedure, transfer, and install through the now-working SideStore setup. Recheck the connected device and installed SideStore identifier instead of assuming prior connection state.
 - Validate requested changes on the physical phone; successful installation alone is not visual or functional acceptance. Do not reset the working SideStore authentication/pairing as a routine build step.
+
+## Session 4 — 2026-10-27 — Native Expo app
+
+- Replaced the Capacitor web wrapper with a native Expo SDK 58 app in `mobile/` (branch `feat/expo-app`). Data code (`espn.ts`, favorites, formatting, React Query) was ported; all screens were rebuilt with React Native components.
+- Navigation: native Liquid Glass tab bar with **Home**, **Favorites** and a separate search button (`role="search"`, native search field in the tab bar). Each tab is a stack sharing game / team / player detail routes, with the native swipe-back gesture.
+- Home: header-left SwiftUI menu ("All Leagues ⌄", NFL, CFB, NBA; persisted). With a league picked, a header-right native segmented control switches Scores / Standings / News. "All" shows scores only. The Teams page moved into Favorites (star teams, filter with a search field).
+- Game / team / player pages draw the team-color hero under the status bar. Two settings make that work: `disableAutomaticContentInsets` on every `NativeTabs.Trigger` (otherwise native tabs switch the first ScrollView's `contentInsetAdjustmentBehavior` from `never` back to `automatic`, pushing the hero below the header), and `scrollEdgeEffects: { top: 'hidden' }` on the detail screens.
+- Verified on the iOS 26.2 simulator (Release build): Home for all leagues and NBA, Standings, News, a live game page, a team page, Favorites, and search. Not verified: opening the league menu by tap (no simulator tap tool here), swipe-back, and the physical phone.

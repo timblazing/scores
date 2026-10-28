@@ -5,7 +5,7 @@ A minimal, dark ESPN alternative for **NFL**, **college football (FBS)**, and **
 Live at **https://scores.blasingame.dev**.
 
 - Web: Vite + React + TypeScript + Tailwind v4, TanStack Query, React Router
-- iOS: the same build wrapped with [Capacitor](https://capacitorjs.com) (`ios/`)
+- iOS: a native [Expo](https://expo.dev) / React Native app (`mobile/`) with iOS 26 Liquid Glass tabs, headers, menus and segmented controls. The older Capacitor wrapper of the web build (`ios/`) is superseded.
 - Data: ESPN's public, unofficial JSON endpoints. On the web, `site.api.espn.com` goes through an edge-caching Worker (`worker/index.ts`, `/api/espn/site/*`); athletes and search, plus everything in the iOS app, call ESPN directly. Reference: [pseudo-r/Public-ESPN-API](https://github.com/pseudo-r/Public-ESPN-API). Not affiliated with ESPN.
 
 ## Develop
@@ -24,7 +24,32 @@ pnpm run deploy   # tsc + `cf deploy` → Worker "scores" on scores.blasingame.d
 
 Config lives in `cloudflare.config.ts`: the ESPN cache Worker runs only for `/api/*`; everything else is static assets with SPA fallback on the custom domain.
 
-## iOS app (free Apple account, no $99 program)
+## iOS app: Expo (`mobile/`)
+
+Expo SDK 58, Expo Router native tabs (Home, Favorites, search), SwiftUI controls from `@expo/ui`. `mobile/ios/` is generated (Continuous Native Generation) and ignored by Git; configure native settings in `mobile/app.json`.
+
+```sh
+cd mobile
+npm install
+npx expo prebuild -p ios      # only when mobile/ios is missing or app.json/plugins changed
+npx tsc --noEmit && npx expo lint
+npx expo run:ios              # dev build on the simulator
+```
+
+Unsigned IPA for SideStore (same bundle ID as the Capacitor build, so it replaces it):
+
+```sh
+cd mobile/ios
+xcodebuild -workspace Scores.xcworkspace -scheme Scores -configuration Release -sdk iphoneos \
+  -destination 'generic/platform=iOS' -archivePath build/Scores.xcarchive archive CODE_SIGNING_ALLOWED=NO
+rm -rf build/Payload build/Scores.ipa
+mkdir -p build/Payload && cp -R build/Scores.xcarchive/Products/Applications/Scores.app build/Payload/
+(cd build && COPYFILE_DISABLE=1 zip -qr Scores.ipa Payload -x '*/._*' '*/.DS_Store')
+```
+
+Then install `mobile/ios/build/Scores.ipa` through SideStore as described below.
+
+## iOS app: Capacitor (legacy; free Apple account, no $99 program)
 
 1. `pnpm ios` builds the web app (`--mode capacitor`, without the Cloudflare plugin), syncs it into `ios/`, and opens Xcode.
 2. In Xcode → **App** target → **Signing & Capabilities**, choose your Personal Team. If the bundle ID `dev.blasingame.scores` is taken, change it to something unique.
