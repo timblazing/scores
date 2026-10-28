@@ -4,10 +4,10 @@ import { FavButton, Logo, Muted, Text } from './ui'
 import { teamLogo, type LeagueId } from '@/lib/espn'
 import { colors } from '@/theme'
 
-export function TeamItem({ league, id, abbr, name, sub }: { league: LeagueId; id: string; abbr: string; name: string; sub?: string }) {
+export function TeamItem({ league, id, abbr, name, sub, onPress }: { league: LeagueId; id: string; abbr: string; name: string; sub?: string; onPress?: () => void }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <Link href={`/team/${league}/${id}`} asChild>
+      <Link href={`/team/${league}/${id}`} onPress={onPress} asChild>
         <Pressable style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingLeft: 16 }}>
           <Logo src={teamLogo(league, abbr, 64, id)} size={28} />
           <Text numberOfLines={1} style={{ flexShrink: 1, fontSize: 16, fontWeight: '500' }}>{name}</Text>

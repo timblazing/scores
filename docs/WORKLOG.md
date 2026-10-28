@@ -170,3 +170,13 @@ Gotchas:
 - Removed the Favorites tab. Starring teams still works from team pages and search, and starred teams still pin to "My Teams" on Scores.
 - New **Fantasy** tab (`screens/FantasyScreen.tsx`, `lib/sleeper.ts`, `lib/useFantasy.ts`), modeled on the sleeper-fantasy-dashboard repo. The Sleeper user (timblazing) and the two leagues (Slim Pickens Memorial League, Oiled Down) are hardcoded. Header menu picks the league (persisted); tabs switch Matchup (my head-to-head lineup with live points, projections and win odds), League (every matchup that week; tap one for its head-to-head) and Standings (grouped by division when the league has them). Projections come from Sleeper's `api.sleeper.com` projections feed, scored with each league's settings; player game status comes from ESPN's NFL scoreboard.
 - Verified on the iOS 26.2 simulator (Release build): Home strip and tabs (All and NBA), NBA TV labels, Fantasy Matchup / League / Standings for both leagues, a finished week (Week 7), and a matchup detail page. Not verified on the physical phone.
+
+## Session 6 — 2026-10-28 — Search nicknames and recents (mobile)
+
+- The owner has used the Expo app on their iPhone (built after the Fantasy commit) and installed it through SideStore. They haven't given detailed feedback yet.
+- `ios/` and `capacitor.config.ts` stay on purpose: the Capacitor web wrapper may be the starting point for a separately maintained build for an iPad mini 2 on iOS 10 (see the owner's `ios-games` repo). It isn't the current iPhone app.
+- Search matches fan nicknames ESPN's names don't contain ("Sixers", "Niners", "Cavs", "Bama", "Noles", "Dubs"…), in `mobile/src/lib/nicknames.ts`, keyed by league and ESPN abbreviation. An exact nickname ranks like an exact abbreviation; 3+ letters prefix-match a nickname ("six" → 76ers).
+- Search remembers the last 8 teams and players opened from it (`mobile/src/lib/recents.ts`, same kv-store pattern as favorites). They show under "Recent", with a Clear button, above My Teams when the field is empty.
+- Game rows: the spread and TV channel lines use `colors.muted` instead of `colors.faint`; they were hard to read on the phone.
+- Backlog item "cache athletes/search somewhere ESPN doesn't block": closed as "call ESPN directly". The native app already calls ESPN directly, so the Worker proxy doesn't matter there.
+- Verified on the iOS 26.2 simulator (Release build), driven with agent-device: the league menu opens by tap; "sixers", "niners", "cavs" and "bama" return the right team first; opening a team and a player from search adds both to Recent, newest first; Clear empties it; swipe-back from a game page returns to Home; the spread and channel text are readable. The web app's search (`src/components/Search.tsx`) is unchanged.
