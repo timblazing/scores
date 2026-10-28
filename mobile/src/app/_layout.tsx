@@ -33,9 +33,9 @@ export default function RootLayout() {
             <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
             <NativeTabs.Trigger.Icon sf="house" />
           </NativeTabs.Trigger>
-          <NativeTabs.Trigger name="(favorites)" disableAutomaticContentInsets>
-            <NativeTabs.Trigger.Label>Favorites</NativeTabs.Trigger.Label>
-            <NativeTabs.Trigger.Icon sf="star" />
+          <NativeTabs.Trigger name="(fantasy)" disableAutomaticContentInsets>
+            <NativeTabs.Trigger.Label>Fantasy</NativeTabs.Trigger.Label>
+            <NativeTabs.Trigger.Icon sf="football" />
           </NativeTabs.Trigger>
           <NativeTabs.Trigger name="(search)" role="search" disableAutomaticContentInsets>
             <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>

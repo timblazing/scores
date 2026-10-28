@@ -1,7 +1,4 @@
-import { HStack, Host, Image, Menu, Picker, Text as SUIText } from '@expo/ui/swift-ui'
-import { font, padding, tag } from '@expo/ui/swift-ui/modifiers'
 import { useQuery } from '@tanstack/react-query'
-import * as Haptics from 'expo-haptics'
 import { Stack } from 'expo-router'
 import { useMemo, useState } from 'react'
 import { ScrollView, View } from 'react-native'
@@ -9,7 +6,7 @@ import { Article } from '@/components/Article'
 import { GameList } from '@/components/GameRow'
 import { StatTable, type TableRow } from '@/components/StatTable'
 import { STRIP_HEIGHT, Strip, type StripItem } from '@/components/Strip'
-import { Card, Empty, ErrorState, Loading, Logo, Segmented, Text, usePullRefresh } from '@/components/ui'
+import { Card, Empty, ErrorState, HeaderMenu, Loading, Logo, Segmented, Tabs, Text, usePullRefresh } from '@/components/ui'
 import { useHeaderInset } from '@/components/Hero'
 import { getNews, getScoreboard, getStandings, LEAGUE_IDS, LEAGUES, type Game, type LeagueId, type Scoreboard, type StandingGroup } from '@/lib/espn'
 import { useFavorites } from '@/lib/favorites'
@@ -33,14 +30,13 @@ export default function HomeScreen() {
       <Stack.Screen options={{ title: '' }} />
       <Stack.Toolbar placement="left">
         <Stack.Toolbar.View>
-          <LeagueMenu choice={choice} />
+          <HeaderMenu value={choice} onChange={setChoice} options={(['all', ...LEAGUE_IDS] as Choice[]).map((c) => ({ value: c, label: choiceName(c) }))} />
         </Stack.Toolbar.View>
       </Stack.Toolbar>
       {league ? (
         <Stack.Toolbar placement="right">
-          <Stack.Toolbar.View>
-            <Segmented
-              width={220}
+          <Stack.Toolbar.View hidesSharedBackground>
+            <Tabs
               value={view}
               onChange={setView}
               options={[
@@ -54,37 +50,6 @@ export default function HomeScreen() {
       ) : null}
       {!league || view === 'scores' ? <ScoresView key={choice} choice={choice} /> : view === 'standings' ? <StandingsView key={choice} league={league} /> : <NewsView key={choice} league={league} />}
     </>
-  )
-}
-
-/** Native SwiftUI menu that reads "NBA ⌄" and lists the leagues with a checkmark on the current one. */
-function LeagueMenu({ choice }: { choice: Choice }) {
-  return (
-    <Host matchContents colorScheme="dark">
-      <Menu
-        label={
-          <HStack spacing={5} modifiers={[padding({ horizontal: 12, vertical: 6 })]}>
-            <SUIText modifiers={[font({ size: 17, weight: 'semibold' })]}>{choiceName(choice)}</SUIText>
-            <Image systemName="chevron.down" size={13} color={colors.muted} />
-          </HStack>
-        }
-      >
-        <Picker
-          label=""
-          selection={choice}
-          onSelectionChange={(c) => {
-            Haptics.selectionAsync()
-            setChoice(c as Choice)
-          }}
-        >
-          {(['all', ...LEAGUE_IDS] as Choice[]).map((c) => (
-            <SUIText key={c} modifiers={[tag(c)]}>
-              {choiceName(c)}
-            </SUIText>
-          ))}
-        </Picker>
-      </Menu>
-    </Host>
   )
 }
 
@@ -156,7 +121,7 @@ function DayGames({ leagues }: { leagues: LeagueId[] }) {
           return games.length ? <Group key={l} title={leagues.length > 1 ? LEAGUES[l].name : undefined} games={games} /> : null
         })}
       </ScrollView>
-      <Strip items={items} selected={date} onSelect={setDate} top={inset + 4} />
+      <Strip items={items} selected={date} onSelect={setDate} top={inset} />
     </View>
   )
 }
@@ -214,7 +179,7 @@ function WeekGames({ league }: { league: LeagueId }) {
             const [type, week] = k.split(':')
             setPick({ week, type })
           }}
-          top={inset + 4}
+          top={inset}
         />
       )}
     </View>
