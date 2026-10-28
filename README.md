@@ -36,6 +36,21 @@ npx tsc --noEmit && npx expo lint
 npx expo run:ios              # dev build on the simulator
 ```
 
+### Testing in the simulator
+
+Test on the **iPhone 16 Pro (iOS 26.2)** simulator (UDID `20D6DCB8-60E9-413F-8EBA-CFCFB9EB3EE3`). The owner's phone is an iPhone 16 Pro, which has the same 402×874 pt screen as the 17 Pro. Avoid the stock "iPhone 16 Pro" on iOS 18.3: Liquid Glass tabs and the native search tab need iOS 26+. The phone runs iOS 27.x, but no iOS 27 simulator runtime is installed (`xcodebuild -downloadPlatform iOS` would add one, a multi-GB download; ask first).
+
+A Release build runs the embedded JS bundle, so Metro isn't needed:
+
+```sh
+cd mobile/ios
+xcodebuild -workspace Scores.xcworkspace -scheme Scores -configuration Release -sdk iphonesimulator \
+  -destination 'id=20D6DCB8-60E9-413F-8EBA-CFCFB9EB3EE3' -derivedDataPath ../build/sim build -quiet
+# app: mobile/build/sim/Build/Products/Release-iphonesimulator/Scores.app (bundle ID dev.blasingame.scores)
+```
+
+In T3 Code, open the simulator with the device tools (`device_open`) and install/drive it with the `agent-device` command it returns. See `mobile/AGENTS.md` for agent-device gotchas.
+
 Unsigned IPA for SideStore (same bundle ID as the Capacitor build, so it replaces it):
 
 ```sh

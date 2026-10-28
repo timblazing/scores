@@ -180,3 +180,9 @@ Gotchas:
 - Game rows: the spread and TV channel lines use `colors.muted` instead of `colors.faint`; they were hard to read on the phone.
 - Backlog item "cache athletes/search somewhere ESPN doesn't block": closed as "call ESPN directly". The native app already calls ESPN directly, so the Worker proxy doesn't matter there.
 - Verified on the iOS 26.2 simulator (Release build), driven with agent-device: the league menu opens by tap; "sixers", "niners", "cavs" and "bama" return the right team first; opening a team and a player from search adds both to Recent, newest first; Clear empties it; swipe-back from a game page returns to Home; the spread and channel text are readable. The web app's search (`src/components/Search.tsx`) is unchanged.
+
+## Session 7 — 2026-10-28 — Simulator setup notes; next direction
+
+- Added a dedicated **iPhone 16 Pro (iOS 26.2)** simulator to match the owner's phone model (UDID in README). Session 6 tested on the iPhone 17 Pro (iOS 26.2), which has the same screen size. The phone runs iOS 27.x, and no iOS 27 simulator runtime is installed.
+- README now covers the Release simulator build. `mobile/AGENTS.md` collects the agent-device lessons from Session 6: stale snapshots after search typing, stale refs, the coordinate scale and the swipe-back gesture.
+- **Owner's next focus:** refine the design to their taste, and explore native components, features and tools the Expo rebuild makes possible (e.g. `@expo/ui` SwiftUI controls, widgets / Live Activities, haptics, context menus and link previews). Have the owner pick the directions before building; mock or screenshot options in the simulator for them.
