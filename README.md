@@ -49,6 +49,8 @@ mkdir -p build/Payload && cp -R build/Scores.xcarchive/Products/Applications/Sco
 
 Then install `mobile/ios/build/Scores.ipa` through SideStore as described below.
 
+See [iOS sideloading options](docs/IOS_SIDELOADING.md) for the current SideStore setup, ArcticSign paid certificates, LiveContainer, and the trade-offs for Scores.
+
 ## iOS app: Capacitor (legacy; free Apple account, no $99 program)
 
 1. `pnpm ios` builds the web app (`--mode capacitor`, without the Cloudflare plugin), syncs it into `ios/`, and opens Xcode.
