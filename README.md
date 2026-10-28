@@ -36,6 +36,24 @@ npx tsc --noEmit && npx expo lint
 npx expo run:ios              # dev build on the simulator
 ```
 
+### Testing in the simulator
+
+Match the owner's phone: an iPhone 16 Pro on the newest iOS (currently the iOS 27.2 release candidate).
+
+- **Preferred:** "iPhone 16 Pro" on **iOS 27.0**, UDID `0C0222EF-2E18-4D96-A500-32050E170333`. Xcode 27.1's iOS 27.1 runtime only supports the iPhone Duo, so 27.0 is the newest runtime for an iPhone 16 Pro. When Xcode ships a newer runtime that supports it (`xcodebuild -downloadPlatform iOS`), create a fresh one with `xcrun simctl create "iPhone 16 Pro" com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro <runtime id>` and update this UDID.
+- **T3 Code's Device panel** lists one simulator per model and didn't show this one in the session it was created; it listed the stock iPhone 16 Pro on iOS 18.3 instead. Leave that one alone: it holds another of the owner's apps, and iOS 18 lacks Liquid Glass. If the panel still doesn't offer the iOS 27 iPhone 16 Pro, use the **iPhone 18 Pro (iOS 27.0)** (`87CE0F80-982E-4EC3-B15A-5977E04D8450`), which has the same 402 pt width, or the iPhone 17 Pro (iOS 26.2).
+
+A Release build runs the embedded JS bundle, so Metro isn't needed:
+
+```sh
+cd mobile/ios
+xcodebuild -workspace Scores.xcworkspace -scheme Scores -configuration Release -sdk iphonesimulator \
+  -destination 'id=0C0222EF-2E18-4D96-A500-32050E170333' -derivedDataPath ../build/sim build -quiet
+# app: mobile/build/sim/Build/Products/Release-iphonesimulator/Scores.app (bundle ID dev.blasingame.scores)
+```
+
+In T3 Code, open the simulator with the device tools (`device_open`) and install/drive it with the `agent-device` command it returns. See `mobile/AGENTS.md` for agent-device gotchas.
+
 Unsigned IPA for SideStore (same bundle ID as the Capacitor build, so it replaces it):
 
 ```sh
