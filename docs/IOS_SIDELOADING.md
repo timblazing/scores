@@ -1,24 +1,26 @@
 # iOS sideloading options for Scores
 
-Recorded 2026-10-28. ArcticSign pricing and terms were checked on 2026-10-27; LiveContainer documentation was checked on 2026-10-28. Provider plans and iOS compatibility can change; check the linked sources before buying or changing the working setup.
+Recorded 2026-10-28. ArcticSign pricing and terms were checked on 2026-10-27; Feather, AltStore, and LiveContainer documentation was checked on 2026-10-28. Provider plans and iOS compatibility can change; check the linked sources before buying or changing the working setup.
 
 ## Current app and recommendation
 
 Scores now uses the native Expo / React Native app in `mobile/`. The Capacitor app in `ios/` is legacy. Build the current unsigned IPA using the [README's Expo instructions](../README.md#ios-app-expo-mobile); the output is `mobile/ios/build/Scores.ipa`.
 
-SideStore installation and seven-day refresh were verified on the owner's iPhone with the earlier Capacitor build. The work log records simulator verification of the newer Expo app, but not physical-phone verification of that version. Neither ArcticSign signing nor LiveContainer compatibility has been tested for Scores.
+SideStore installation and seven-day refresh were verified on the owner's iPhone with the earlier Capacitor build. The owner has since installed LiveContainer and successfully installed Scores inside it, finding it useful for quick testing but not the preferred main installation method. This is an owner-reported result, not full functional or compatibility QA. ArcticSign signing, Feather, and AltStore have not been tested for Scores.
 
-Keep Scores installed directly through SideStore while that setup works. Consider LiveContainer for additional apps or experimental builds; consider paid signing if avoiding weekly refreshes is worth the cost and third-party certificate risk.
+Keep Scores installed directly through SideStore while that setup works. Use LiveContainer for quick testing or experimental builds; consider paid signing with an installer such as Feather if avoiding weekly refreshes is worth the cost and third-party certificate risk.
 
 ## Comparison
 
 | Option | What it provides | Refresh / expiration | Main trade-off |
 | --- | --- | --- | --- |
 | SideStore with a free Apple Account | Direct installation using your own account | Refresh before seven-day provisioning expires | Three active apps including SideStore; ten App IDs per week |
+| AltStore Classic with a free Apple Account | Direct installation using your account and AltServer | Seven-day provisioning; standard refresh workflow needs AltServer on a computer | Similar free-account limits to SideStore, with more computer dependence |
 | ArcticSign Prime | Third-party signing credentials for one registered device | Advertised approximately one-year validity, unless revoked earlier | Paid service; only one distribution-certificate replacement within 90 days |
+| Feather with imported signing credentials | On-device IPA signing and direct installation | Determined by the imported certificate and provisioning profile | Supplies the installer, not the signing credentials or longer validity |
 | LiveContainer with free SideStore signing | Many guest apps inside one installed host app | The host still needs free-account refreshes | Guest apps have compatibility and integration limitations |
 
-Sources: [SideStore FAQ](https://docs.sidestore.io/docs/faq), [ArcticSign plans](https://arcticsign.app/), [ArcticSign terms](https://arcticsign.app/tos), [LiveContainer README](https://github.com/LiveContainer/LiveContainer).
+Sources: [SideStore FAQ](https://docs.sidestore.io/docs/faq), [AltServer docs](https://faq.altstore.io/altstore-classic/altserver), [AltStore comparison](https://faq.altstore.io/altstore-pal-v.-altstore-classic), [ArcticSign plans](https://arcticsign.app/), [ArcticSign terms](https://arcticsign.app/tos), [Feather README](https://github.com/claration/feather), [LiveContainer README](https://github.com/LiveContainer/LiveContainer).
 
 ## SideStore: the existing free workflow
 
@@ -32,6 +34,26 @@ SideStore signs IPAs with your Apple Account's personal development certificate.
 The [README](../README.md#setup-troubleshooting-verified-2026-10-27) records the Anisette workaround that resolved phone login error `-80045`. Preserve that working setup instead of routinely resetting authentication or pairing.
 
 Sources: [SideStore FAQ](https://docs.sidestore.io/docs/faq), [installation guide](https://docs.sidestore.io/docs/installation/install).
+
+## AltStore Classic: an alternative to SideStore
+
+AltStore Classic signs and installs IPAs with your Apple Account. Its standard workflow uses AltServer running on a computer: the phone connects over the same Wi-Fi network or USB for installation and refresh. AltStore attempts background refresh when AltServer is reachable.
+
+Prefer it if a computer is routinely available and the AltServer workflow suits you better than SideStore's on-device connection setup. For this project it is mostly a sideways move: free-account signing still expires after seven days and has the three-app limit. SideStore is more independent of the computer after initial setup, so there is no current reason to switch the working Scores installation.
+
+AltStore **PAL** is a separate regional marketplace for notarized apps, rather than the arbitrary-IPA workflow relevant to locally built Scores releases. Do not confuse PAL's marketplace distribution with Classic's personal-account sideloading.
+
+Sources: [AltStore repository](https://github.com/altstoreio/AltStore), [AltServer docs](https://faq.altstore.io/altstore-classic/altserver), [PAL versus Classic](https://faq.altstore.io/altstore-pal-v.-altstore-classic).
+
+## Feather: an installer for imported signing credentials
+
+Feather is a free, open-source iOS app for signing and installing IPAs directly on the phone using imported signing credentials. It supports AltStore-format app repositories, certificate management, and configurable signing options.
+
+It is a relevant installer to evaluate if purchasing an ArcticSign-style certificate: the provider supplies the signing credentials, while Feather signs and installs Scores as a normal iOS app. It does not run Scores inside a guest container like LiveContainer.
+
+Feather does not supply a certificate, extend its validity, or prevent revocation. Any benefit from avoiding weekly refreshes comes from the imported certificate and provisioning profile, not Feather itself. Compatibility with the chosen certificate bundle and installation on the phone still need verification; this workflow has not been tested for Scores.
+
+Source: [Feather README](https://github.com/claration/feather).
 
 ## ArcticSign: pay for longer-lived signing
 
@@ -84,7 +106,7 @@ Use the official installation guide for the selected build. It explicitly does n
 - Guest widgets and app extensions generally are not supported; guest entitlements are not automatically granted to the host.
 - File pickers, URL handling, permissions, and other integrations may need compatibility settings or behave differently.
 - Guest apps share a sandbox and can access other guest apps' data. Separate data containers are not equivalent to iOS app sandbox isolation.
-- Some apps do not work. Scores' current Expo / React Native build has not been tested inside LiveContainer; its native controls, navigation, storage, networking, and lifecycle need device verification before relying on it there.
+- Some apps do not work. The owner successfully installed Scores inside LiveContainer and found it useful for quick testing. Full verification of native controls, navigation, storage, networking, and lifecycle remains outstanding; successful installation alone does not establish complete compatibility.
 
 Use official open-source builds. The project warns that closed-source third-party builds can access all contained app data, including credentials. Back up important data before moving between direct installation and a guest container; do not assume the existing Scores data transfers automatically.
 
@@ -92,9 +114,10 @@ Sources: [README and limitations](https://github.com/LiveContainer/LiveContainer
 
 ## Choosing for this project
 
-- **Only Scores, and refresh is reliable:** stay with direct SideStore installation; neither alternative is necessary.
-- **More apps or isolated app-version experiments:** try LiveContainer for those guests while keeping the main Scores install direct. Its data containers are useful for experiments, but do not provide security isolation.
-- **Weekly refresh or Anisette maintenance is the problem:** ArcticSign Prime could reduce that maintenance for a small fee, with the revocation and warranty limits above. Confirm its certificate expiry and the Prime/JIT discrepancy first.
+- **Only Scores, and refresh is reliable:** stay with direct SideStore installation; the other tools are optional.
+- **Quick testing or app-version experiments:** use LiveContainer for those guests while keeping the main Scores install direct, matching the owner's preference after trying it. Its data containers are useful for experiments, but do not provide security isolation.
+- **Weekly refresh or Anisette maintenance is the problem:** ArcticSign Prime with a compatible installer such as Feather could reduce that maintenance for a small fee, with the revocation and warranty limits above. Confirm its certificate expiry and the Prime/JIT discrepancy first.
+- **A computer is routinely available:** AltStore Classic is an alternative if AltServer suits the workflow better, but it does not remove the free-account limits or seven-day signing period.
 - **Testing native integrations or future widgets/push:** prefer direct installation so LiveContainer's guest limitations do not become an extra variable. Direct sideloading still requires the appropriate Apple capabilities; it does not itself guarantee push or widget support.
 
-No provider purchase, signing migration, or device installation was performed as part of this comparison.
+The LiveContainer installation result above was reported by the owner. No provider purchase, signing migration, or device installation was performed by the agent as part of this documentation work.
