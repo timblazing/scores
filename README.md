@@ -34,12 +34,34 @@ Free provisioning expires after 7 days. To avoid re-plugging every week, use **S
 
 1. Archive an unsigned `.ipa`:
    ```sh
+   pnpm exec tsc -b
    pnpm sync
    cd ios/App && xcodebuild -project App.xcodeproj -scheme App -configuration Release \
      -sdk iphoneos -archivePath build/Scores.xcarchive archive CODE_SIGNING_ALLOWED=NO
-   mkdir -p build/Payload && cp -r build/Scores.xcarchive/Products/Applications/App.app build/Payload/
-   (cd build && zip -qr Scores.ipa Payload)
+   rm -rf build/Payload
+   rm -f build/Scores.ipa
+   mkdir -p build/Payload && cp -R build/Scores.xcarchive/Products/Applications/App.app build/Payload/
+   (cd build && COPYFILE_DISABLE=1 zip -qr Scores.ipa Payload -x '*/._*' '*/.DS_Store')
+   unzip -t build/Scores.ipa
    ```
-2. AirDrop or Files-share `ios/App/build/Scores.ipa` to the phone and open it in SideStore. SideStore signs it with your Apple ID and refreshes it in the background before the 7-day expiry. Free accounts get 3 active sideloaded apps.
+   Use plain `zip`, not `ditto -c -k --keepParent`: the latter added AppleDouble metadata, including `Payload/._App.app`, to our first IPA. SideStore rejected that package with **"The app is in an invalid format."** Repacking without those entries installed successfully. Start with a fresh ZIP each time so old entries cannot survive an update.
+2. For first-time SideStore setup, follow the [official guide](https://docs.sidestore.io/docs/installation/install): install [iloader](https://iloader.app/) on the Mac, sign in, select the phone's **USB** connection, and install **SideStore (Stable)**. Trust the developer profile on the phone and enable Developer Mode if required. Install [LocalDevVPN](https://apps.apple.com/app/localdevvpn/id6755608044), connect it, then sign into SideStore with the same Apple Account. Under **My Apps**, tap SideStore's remaining-days counter to complete its first refresh.
+3. AirDrop or Files-share `ios/App/build/Scores.ipa` to the phone. In **SideStore → My Apps → +**, select the IPA. SideStore signs it with your Apple Account. Keep LocalDevVPN connected during installs and refreshes; refresh before the 7-day expiry. Free accounts get 3 active sideloaded apps, including SideStore.
+
+   With a paired USB device, the Mac can also copy the IPA directly into SideStore's Documents folder. Discover the actual SideStore bundle identifier (signing adds a team suffix), then substitute it and the device identifier below:
+   ```sh
+   xcrun devicectl list devices
+   xcrun devicectl device info apps --device '<device-id>' --include-all-apps --search SideStore
+   xcrun devicectl device copy to --device '<device-id>' \
+     --source ios/App/build/Scores.ipa --destination Documents/Scores.ipa \
+     --domain-type appDataContainer --domain-identifier '<installed-sidestore-bundle-id>'
+   ```
+   Select **On My iPhone → SideStore → Scores.ipa** in SideStore's file picker.
+
+### Setup troubleshooting (verified 2026-10-27)
+
+- **iloader: `Failed to fetch DeviceName: this request was prohibited`**: this occurred during discovery, but the phone remained selectable over USB and installation succeeded. Dismiss the error, keep the phone unlocked, verify Finder sees it, and select the USB entry. The specific failing connection was not identified; do not assume the Apple Account is at fault.
+- **iloader: Apple Account locked (`-20209`)**: unlock through [Apple](https://iforgot.apple.com/), verify the current password works at Apple's account site, restart iloader, re-enter the current password, and retry once. This resolved our login. Stop repeated attempts if the lock returns.
+- **SideStore phone login: `-80045`, while iloader login works**: the successful sequence was **Settings → User Customizations → On-Device Anisette off**, then **Anisette Servers → Jkcoxson (Mac)** (`https://mac-ani.jkcoxson.com/`) with automatic rotation off. Force-quit and reopen SideStore, keep LocalDevVPN connected, and retry login. This is a [community workaround](https://github.com/SideStore/SideStore/issues/1652), not a guaranteed fix for every build. No pairing-file reset or reinstall was needed.
 
 After web-only changes, the deployed site updates immediately; the iOS app needs `pnpm sync` + a rebuild.

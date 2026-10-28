@@ -122,4 +122,35 @@ Gotchas:
 
 1. Search: recent searches, and team nicknames ESPN's names don't cover ("Sixers", "Niners", "Cavs").
 2. Consider caching athletes/search somewhere ESPN doesn't block, or accept direct calls.
-3. Install the iOS build on a device (`pnpm sync` first; the native app keeps calling ESPN directly).
+3. ~~Install the iOS build on a device~~ — completed in Session 3.
+
+## Session 3 — 2026-10-27 — iPhone install and next-session handoff
+
+### Current state
+
+- **Scores installed successfully on the owner's physical iPhone 16 Pro**, running iOS 27.2, through SideStore. Owner confirmed installation succeeded; `devicectl` subsequently confirmed Scores version **1.0 (1)** is installed. No full functional or visual device QA was performed in this session.
+- The installed app contains the shared website source through **`ee5fd21`**, including the possession triangle and centered game header clock. Website deployments alone do not update the bundled native app.
+- No application source or native project changes were required. No website deployment was performed. This session updates the build/setup documentation only.
+- SideStore **0.7.0-20260911.328+6032424a (0700)** was installed using **iloader 2.4.0** on the Mac. The owner authenticated in SideStore and successfully completed its first 7-day refresh with LocalDevVPN connected.
+
+### Build and packaging evidence
+
+- `pnpm exec tsc -b` passed; `pnpm sync` built in Capacitor mode and copied the current web assets into iOS.
+- Unsigned Release archive via the README's `xcodebuild` command: **ARCHIVE SUCCEEDED**. All **19** files from `dist/` matched their archived `App.app/public/` copies by SHA-256.
+- Initial packaging used `ditto -c -k --keepParent`, which added AppleDouble `._*` entries, including a second `.app`-suffixed entry at `Payload/._App.app`. SideStore rejected it as **"The app is in an invalid format."** Its extraction code selects the first `.app`-suffixed payload entry without filtering these metadata files; this explains a plausible failure path, though the selected entry was not captured in phone logs.
+- Repacked using plain `zip` with `COPYFILE_DISABLE=1`, excluding `._*` and `.DS_Store`. Verified exactly one payload app, valid Info.plist and executable, no AppleDouble entries, and passing ZIP integrity. The owner confirmed this replacement installed.
+- Local build artifacts (ignored by Git): `ios/App/build/Scores.xcarchive`, `ios/App/build/Payload/App.app`, and **`ios/App/build/Scores-clean.ipa`** (the successful package). The original `Scores.ipa` is the rejected package; use the clean one from this session or rebuild using the corrected README commands.
+- Transferred the successful package directly into SideStore's `Documents/Scores-clean.ipa` using `devicectl device copy to`; the owner selected it under **My Apps → + → On My iPhone → SideStore**.
+
+### Setup issues resolved
+
+- iloader's device-name discovery error persisted even though Finder saw the phone. Dismissing it and selecting **USB** allowed progress; the exact source of the rejected query remains unknown.
+- Apple returned account-locked error `-20209`. The owner unlocked the account, verified login on Apple's site, restarted iloader/reconnected the phone, and successfully logged in. No credentials or pairing files belong in this repository.
+- SideStore then returned `-80045` on the phone despite successful desktop authentication. Turning **On-Device Anisette off**, selecting **Jkcoxson (Mac)**, disabling automatic server rotation, and restarting SideStore resolved authentication. No pairing reset was required. See README for the instructions and upstream issue link; availability and menu names may change.
+
+### Next session: mobile app tweaks
+
+- Owner plans to start a fresh session for mobile changes; no specific tweaks have been requested yet.
+- Read this work log and README first. Shared React UI lives in `src/`; native wrapper/config lives in `ios/` and `capacitor.config.ts`. Native requests go directly to ESPN, as documented above.
+- For each native update: typecheck, `pnpm sync`, archive, package with the corrected ZIP procedure, transfer, and install through the now-working SideStore setup. Recheck the connected device and installed SideStore identifier instead of assuming prior connection state.
+- Validate requested changes on the physical phone; successful installation alone is not visual or functional acceptance. Do not reset the working SideStore authentication/pairing as a routine build step.
