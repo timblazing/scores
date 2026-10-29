@@ -52,7 +52,7 @@ xcodebuild -workspace Scores.xcworkspace -scheme Scores -configuration Release -
 # app: mobile/build/sim/Build/Products/Release-iphonesimulator/Scores.app (bundle ID dev.blasingame.scores)
 ```
 
-In T3 Code, open the simulator with the device tools (`device_open`) and install/drive it with the `agent-device` command it returns. See `mobile/AGENTS.md` for agent-device gotchas.
+In T3 Code, use the built-in **Device panel** so the owner can watch and interact: call `device_list`, then `device_open` with the chosen `hostId` and `deviceId`. Use the returned device-bound `agent-device` command to launch and interact, and `device_screenshot` to inspect the screen. Builds and installs may use CLI tools; do not launch, tap or capture through `simctl`/`idb`. Follow [the repository agent instructions](AGENTS.md#t3-code-device-panel) for tool failures and cleanup, and `mobile/AGENTS.md` for agent-device gotchas.
 
 Unsigned IPA for SideStore (same bundle ID as the Capacitor build, so it replaces it):
 
