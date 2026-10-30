@@ -43,7 +43,7 @@ Docs: https://docs.expo.dev/eas/index.md
 ## This project: testing on the simulator
 
 - Build and device setup: README → "Testing in the simulator". Use the iPhone 16 Pro on iOS 27 (or the README's fallback if the Device panel doesn't list it); the owner's phone is an iPhone 16 Pro on the latest iOS 27 release.
-- The owner can't see what you tested unless it's in the Device panel: open it with `device_open`, then install, launch, tap, type, swipe and take screenshots with the `agent-device` command it returns, not `simctl`/`idb`.
+- Follow the root [T3 Code Device panel workflow](../AGENTS.md#t3-code-device-panel): `device_list`, `device_open` with host/device IDs, the returned `agent-device` command for launch/input/capture, and `device_screenshot` for inspection. CLI builds and installs are allowed; launch/input/capture must stay in the panel so the owner can watch and interact.
 - `agent-device snapshot -i` can lag after typing into the native search bar: it showed the previous query's results while the screen had the new ones. Confirm results with `device_screenshot` before calling something a bug.
 - `@eN` refs go stale when the screen changes. Re-snapshot before each `press`/`fill`; a stale ref once tapped a search result and navigated away.
 - Coordinates are in points (402×874). `device_screenshot` images are 3× pixels, so divide by 3, or by about 2.29 for the 920 px-wide preview.
