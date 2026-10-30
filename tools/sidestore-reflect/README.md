@@ -17,4 +17,6 @@ ssh raygun 'gcc -O2 -Wall -o /tmp/sidestore-reflect /tmp/sidestore-reflect.c &&
 
 Check: `ssh raygun 'systemctl status sidestore-reflect; ping -c1 10.7.0.1'` (the ping is reflected back to raygun itself, so it answers if the reflector works).
 
+The service also adds an SNAT rule so reflected packets leave with raygun's Tailscale IP (`100.65.38.4`) as their source. Without it the phone's Tailscale drops them: a new inbound connection from `10.7.0.1` isn't from a tailnet node. Replies still go out as `10.7.0.1`, which the phone accepts as return traffic for its own connection. If raygun's Tailscale IP changes, update it in the service file.
+
 `--advertise-routes` replaces raygun's advertised routes; if raygun later advertises others, list them all in one comma-separated value. `--snat-subnet-routes=false` applies to every route raygun advertises.
