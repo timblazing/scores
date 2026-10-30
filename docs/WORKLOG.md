@@ -13,12 +13,13 @@ Keep this list current at the end of every session; session notes below are hist
 1. **Check Session 9 on the simulator.** Press-and-hold a game row (preview, Follow/Unfollow, Share) and a Search team row; pull-to-refresh and follow haptics. Needs the Mac: this session ran on the Pi with no iOS device host.
 2. **More design refinement.** The owner is focused on design next. Ask for notes, show options as side-by-side simulator screenshots, and let the owner choose (`mobile/AGENTS.md` → "design work with the owner").
 3. **Phone testing.** The owner will test on the phone once the design is settled; don't push for it before then.
-4. **Native features still open:** `@expo/ui` SwiftUI controls. Widgets: not yet (owner).
-5. **Parked.**
-   - **Live Activities for favorites' live games.** The owner wants them, but updates while the app is closed need ActivityKit push, which free Apple accounts (SideStore signing) can't get. Options: the $99/yr Apple Developer Program plus a Cloudflare Worker that watches ESPN and sends APNs pushes (also ends weekly SideStore refreshes), or a free version that only updates while the app is open. Owner chose to skip for now (2026-10-30).
+4. **SideStore over Tailscale (in progress, PR "Sideloading notes").** Reflector on **raygun**, not anton; plan in `docs/IOS_SIDELOADING.md`. Blocked on SSH: anton's key (`~/.ssh/id_ed25519.pub`, `clay@anton`) has to be added to raygun's `~/.ssh/authorized_keys`. The owner may also try ArcticSign + Feather.
+5. **Native features still open:** `@expo/ui` SwiftUI controls. Widgets: not yet (owner).
+6. **Parked.**
+   - **Live Activities for favorites' live games.** The owner wants them but won't pay the $99/yr Apple program, and updates while the app is closed need ActivityKit push from your own team. Free alternatives (score alerts through ntfy/Bark or Web Push, in-app-only Live Activity) are in `docs/IOS_SIDELOADING.md` → "Live scores without the $99 program". Pitch one if the owner asks again.
    - Football possession indicator, in some form other than the left/right arrow.
    - Fantasy's empty-state "Open Settings" button is unverified; the owner says it isn't a priority.
-   - SideStore over Tailscale instead of LocalDevVPN: possible with a reflector on the Pi (`docs/IOS_SIDELOADING.md`); owner said not now.
+   - Sharing Scores with a friend without SideStore: options researched in `docs/IOS_SIDELOADING.md` → "Sharing Scores with a friend". Future idea, nothing to build yet.
 
 ## Session 9 — 2026-10-30 — Link previews, context menus, haptics
 

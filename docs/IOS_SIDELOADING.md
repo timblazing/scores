@@ -35,13 +35,21 @@ The [README](../README.md#setup-troubleshooting-verified-2026-10-27) records the
 
 Sources: [SideStore FAQ](https://docs.sidestore.io/docs/faq), [installation guide](https://docs.sidestore.io/docs/installation/install).
 
-### Refreshing over Tailscale instead of LocalDevVPN (not set up)
+### Refreshing over Tailscale instead of LocalDevVPN (in progress)
 
-Checked 2026-10-30. iOS runs one VPN at a time, so with Tailscale always on, SideStore's refresh needs LocalDevVPN switched on in its place. The community project [sidestore-vpn-tailscale](https://github.com/shiqi917/sidestore-vpn-tailscale) (a fork of [xddxdd/sidestore-vpn](https://github.com/xddxdd/sidestore-vpn)) removes the switch: a Linux machine on the tailnet reflects SideStore's packets back to the phone, and SideStore points at that machine in **Settings → Connection Config** with **Use Local VPN** off (Remote Endpoint mode, Device IP = the reflector's Tailscale IP).
+Checked 2026-10-30. iOS runs one VPN at a time, so with Tailscale always on, a SideStore refresh means switching to LocalDevVPN. A reflector on a Linux machine on the tailnet removes the switch: it bounces SideStore's packets back to the phone, which is what LocalDevVPN does on the device. Based on [sidestore-vpn-tailscale](https://github.com/shiqi917/sidestore-vpn-tailscale), a fork of [xddxdd/sidestore-vpn](https://github.com/xddxdd/sidestore-vpn).
 
-- Needs an always-on Linux box on the tailnet (the Raspberry Pi would do; the project ships Docker but the reflector is a small Rust program that can run as a plain service), SideStore 0.6.3+ with an RPPairing pairing file from iloader, and `--snat-subnet-routes=false` on that node.
-- The phone must be on some Wi-Fi: iOS closes the services SideStore needs on cellular, with any VPN.
-- Community project, not SideStore documentation. Untested here; the owner chose to keep LocalDevVPN for now.
+Plan for **raygun** (Raspberry Pi, Tailscale IP `100.65.38.4`), run natively instead of in Docker:
+
+1. Build the reflector (a short Rust program) and run it as a systemd service. It owns a TUN device holding `10.7.0.1`, swaps source and destination on each packet and sends it back.
+2. raygun advertises `10.7.0.1/32` as a Tailscale subnet route with `--snat-subnet-routes=false`, so packets keep the phone's own address. Approve the route in the Tailscale admin console. A route outside Tailscale's 100.64.0.0/10 range is used because Tailscale won't distribute routes inside it, and this keeps raygun's own Tailscale IP free for its other services. This differs from the fork, which gives the reflector its own Tailscale node.
+3. On the phone: Tailscale on (with subnet routes allowed), then SideStore → Settings → **Connection Config** → **Use Local VPN** off (Remote Endpoint mode), **Device IP** `10.7.0.1`, RemotePair Port empty. Health Check → Device Reachability should be green. If it's slow, raise Developer Options → Device (TCP) Probe Timeout to 2000 ms.
+
+Requirements and limits:
+
+- SideStore 0.6.3+ with an RPPairing pairing file (iloader). The installed SideStore is 0.7.0.
+- The phone must be on some Wi-Fi. iOS closes the services SideStore needs on cellular, with any VPN.
+- Community project, not SideStore documentation. LocalDevVPN stays installed as the fallback.
 
 ## AltStore Classic: an alternative to SideStore
 
@@ -124,8 +132,31 @@ Sources: [README and limitations](https://github.com/LiveContainer/LiveContainer
 
 - **Only Scores, and refresh is reliable:** stay with direct SideStore installation; the other tools are optional.
 - **Quick testing or app-version experiments:** use LiveContainer for those guests while keeping the main Scores install direct, matching the owner's preference after trying it. Its data containers are useful for experiments, but do not provide security isolation.
+- **Trying ArcticSign + Feather (owner is curious, 2026-10-30):** a cheap experiment worth doing as long as SideStore stays installed as the fallback. Buy base Prime (~$9) for the iPhone's UDID, install Feather through SideStore, import the certificate, sign Scores in Feather, then delete the SideStore-installed copy of Scores (same bundle ID). What it changes: no weekly refresh, no LocalDevVPN or Tailscale reflector for Scores, no three-app limit. What it doesn't: you still build and move a new IPA for each update (Feather can install from an AltStore-format source URL, so a source JSON pointing at IPAs published on GitHub Releases would make updates a tap). Risks: revocation, and Apple's 7-day refresh is replaced by a provider's lifespan you don't control.
 - **Weekly refresh or Anisette maintenance is the problem:** ArcticSign Prime with a compatible installer such as Feather could reduce that maintenance for a small fee, with the revocation and warranty limits above. Confirm its certificate expiry and the Prime/JIT discrepancy first.
 - **A computer is routinely available:** AltStore Classic is an alternative if AltServer suits the workflow better, but it does not remove the free-account limits or seven-day signing period.
 - **Testing native integrations or future widgets/push:** prefer direct installation so LiveContainer's guest limitations do not become an extra variable. Direct sideloading still requires the appropriate Apple capabilities; it does not itself guarantee push or widget support.
 
 The LiveContainer installation result above was reported by the owner. No provider purchase, signing migration, or device installation was performed by the agent as part of this documentation work.
+
+## Sharing Scores with a friend
+
+Researched 2026-10-30. The goal is an install that doesn't ask the friend to set up SideStore or turn on Developer Mode. Developer Mode is needed for apps signed with a *development* profile (free Apple Accounts and SideStore). Apps signed with a *distribution* profile (ad hoc, enterprise, App Store, TestFlight) don't need it.
+
+| Option | Friend's steps | Cost | Catch |
+| --- | --- | --- | --- |
+| **The web app** (scores.blasingame.dev) | Safari → Share → Add to Home Screen | Free | Not the native Expo app; it's the older shared web UI. iOS 16.4+ Home Screen web apps can get Web Push, so score alerts are possible without Apple fees. |
+| **Paid signing service per device** (ArcticSign, Signulous, KravaSign…) | Buy a certificate for their UDID, then install the IPA from Safari or Feather | About $9–20 per device per year | Third-party certificates can be revoked by Apple at any time. Each friend pays or you pay per device. |
+| **Expo Go + EAS Update** | Install Expo Go from the App Store, open a link | Free | Expo Go only has Expo's bundled native modules and is meant for development; check that every module Scores uses is in Expo Go for SDK 58 before relying on it. Not tested. |
+| **TestFlight / ad hoc with your own account** | Tap a TestFlight invite | $99/yr | What you want to avoid. Most reliable and the only route to push and Live Activities in your own app. |
+
+LiveContainer doesn't help here: the friend still needs SideStore to install it.
+
+## Live scores without the $99 program
+
+Live Activities for Scores itself need ActivityKit push from your own Apple team, so free signing and third-party certificates both rule them out (you don't hold the APNs key for a provider's team). What's possible for free:
+
+- **In-app only:** a Live Activity that updates while Scores is open and goes stale after you leave. Free, but weak.
+- **Score alerts through a free push app:** a Cloudflare Worker cron (or raygun) polls ESPN for favorites' live games and posts each score change to [ntfy](https://ntfy.sh) or [Bark](https://github.com/Finb/Bark), whose App Store apps hold the push entitlement. Notifications, not a Live Activity, but they arrive with the app closed.
+- **Web Push** to the Home Screen web app (above), from the same Worker.
+- [ActivitySmith](https://activitysmith.com) does real Live Activities from your own server through its App Store app, but costs $9–19/month or $99–199 lifetime, so it isn't cheaper than the Apple program.
