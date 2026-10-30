@@ -13,19 +13,19 @@ Keep this list current at the end of every session; session notes below are hist
 1. **Check Session 9 on the simulator.** Press-and-hold a game row (preview, Follow/Unfollow, Share) and a Search team row; pull-to-refresh and follow haptics. Needs the Mac: this session ran on the Pi with no iOS device host.
 2. **More design refinement.** The owner is focused on design next. Ask for notes, show options as side-by-side simulator screenshots, and let the owner choose (`mobile/AGENTS.md` → "design work with the owner").
 3. **Phone testing.** The owner will test on the phone once the design is settled; don't push for it before then.
-4. **SideStore over Tailscale: confirm a real refresh.** Set up and merged (PR #11): `sidestore-reflect.service` on **raygun** (`tools/sidestore-reflect/`), route `10.7.0.1/32` approved, SideStore in Remote Endpoint mode with Device IP `10.7.0.1`. Health Check is green (2026-10-30). Still to confirm with the owner: a manual refresh with LocalDevVPN off, and background refresh keeping the expiry date moving over the following days. Keep LocalDevVPN installed as the fallback. The owner may also try ArcticSign + Feather.
-5. **Native features still open:** `@expo/ui` SwiftUI controls. Widgets: not yet (owner).
-6. **Parked.**
+4. **Native features still open:** `@expo/ui` SwiftUI controls. Widgets: not yet (owner).
+5. **Parked.**
    - **Live Activities for favorites' live games.** The owner wants them but won't pay the $99/yr Apple program, and updates while the app is closed need ActivityKit push from your own team. Free alternatives (score alerts through ntfy/Bark or Web Push, in-app-only Live Activity) are in `docs/IOS_SIDELOADING.md` → "Live scores without the $99 program". Pitch one if the owner asks again.
    - Football possession indicator, in some form other than the left/right arrow.
    - Fantasy's empty-state "Open Settings" button is unverified; the owner says it isn't a priority.
    - Sharing Scores with a friend without SideStore: options researched in `docs/IOS_SIDELOADING.md` → "Sharing Scores with a friend". Future idea, nothing to build yet.
 
-## Session 9 — 2026-10-30 — Link previews, context menus, haptics
+## Session 9 — 2026-10-30 — Link previews, context menus, haptics, SideStore over Tailscale
 
 - Game rows (`GameRow.tsx`): press and hold for the native game page preview and a menu with Follow/Unfollow for each team and Share (ESPN game link with the score line). Search team rows (`TeamItem.tsx`): preview plus Follow/Unfollow.
 - Haptics: `toggleFollow` in `components/ui.tsx` gives a success tap when following and a selection tap when unfollowing (star buttons, team page, menus). Pull-to-refresh starts with a light tap. A success tap fires when a My Teams live game changes score (`useScoreTaps` in `ScoresScreen.tsx`).
 - Typecheck and lint pass. Not run on the simulator or phone.
+- **SideStore refreshes over Tailscale; LocalDevVPN is no longer needed.** `sidestore-reflect.service` on **raygun** (`tools/sidestore-reflect/`) reflects `10.7.0.1`, advertised as a Tailscale subnet route. The reflected packets are SNATed to raygun's Tailscale IP, because the phone's Tailscale drops new connections from `10.7.0.1`. SideStore runs in Remote Endpoint mode with Device IP `10.7.0.1`. The owner confirmed it works (2026-10-30). Refreshing needs Wi-Fi. LocalDevVPN stays installed as the fallback if raygun is down. The owner may still try ArcticSign + Feather.
 
 ## Session 1 — 2026-10-20
 
