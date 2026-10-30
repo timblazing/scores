@@ -2,6 +2,20 @@
 
 Running notes on what's built, why, and what's next. Read this before starting a new session.
 
+## Slate — what's next
+
+Keep this list current at the end of every session; session notes below are history. Last updated: Session 8, 2026-10-29.
+
+**State:** `main` has the native Expo app in `mobile/` with tabs Scores (gear → Settings), Fantasy, Leagues and Search, plus first-launch onboarding (PRs #8, #9). The build from that `main` was sideloaded to the owner's iPhone through SideStore on 2026-10-29.
+
+**Up next, in order:**
+
+1. **Owner feedback on the phone build.** Ask how the Scores hub, onboarding, Settings and Leagues feel on the device. Fix anything they flag first.
+2. **More design refinement.** The owner said more design notes are coming after the Session 8 batch. Ask for them, show options as side-by-side simulator screenshots, and let the owner choose (`mobile/AGENTS.md` → "design work with the owner").
+3. **Unverified bits from Session 8.** Fantasy's empty-state "Open Settings" button (`/settings` exists in the `(scores)`, `(fantasy)` and `(leagues)` groups; make sure it opens in the current tab).
+4. **Native features to explore.** Pitch these to the owner before building: haptics, context menus and link previews on game rows, `@expo/ui` SwiftUI controls, home-screen widgets, and Live Activities for live games.
+5. **Parked.** Bring the football possession indicator back in some form. The owner disliked the left/right arrow and dropped it for now.
+
 ## Session 1 — 2026-10-20
 
 ### What shipped
