@@ -35,13 +35,13 @@ The [README](../README.md#setup-troubleshooting-verified-2026-10-27) records the
 
 Sources: [SideStore FAQ](https://docs.sidestore.io/docs/faq), [installation guide](https://docs.sidestore.io/docs/installation/install).
 
-### Refreshing over Tailscale instead of LocalDevVPN (in progress)
+### Refreshing over Tailscale instead of LocalDevVPN
 
 Checked 2026-10-30. iOS runs one VPN at a time, so with Tailscale always on, a SideStore refresh means switching to LocalDevVPN. A reflector on a Linux machine on the tailnet removes the switch: it bounces SideStore's packets back to the phone, which is what LocalDevVPN does on the device. Based on [sidestore-vpn-tailscale](https://github.com/shiqi917/sidestore-vpn-tailscale), a fork of [xddxdd/sidestore-vpn](https://github.com/xddxdd/sidestore-vpn).
 
-Plan for **raygun** (Raspberry Pi, Tailscale IP `100.65.38.4`), run natively instead of in Docker:
+Set up on **raygun** (Raspberry Pi, Tailscale IP `100.65.38.4`) on 2026-10-30, natively instead of in Docker. Source, service file and install commands: [`tools/sidestore-reflect/`](../tools/sidestore-reflect/README.md).
 
-1. Build the reflector (a short Rust program) and run it as a systemd service. It owns a TUN device holding `10.7.0.1`, swaps source and destination on each packet and sends it back.
+1. `sidestore-reflect.service` (a ~40-line C port of the Rust reflector) owns a TUN device `sidestore` routed to `10.7.0.1`, swaps source and destination on each packet and sends it back. IP forwarding is on through `/etc/sysctl.d/90-sidestore-reflect.conf`.
 2. raygun advertises `10.7.0.1/32` as a Tailscale subnet route with `--snat-subnet-routes=false`, so packets keep the phone's own address. Approve the route in the Tailscale admin console. A route outside Tailscale's 100.64.0.0/10 range is used because Tailscale won't distribute routes inside it, and this keeps raygun's own Tailscale IP free for its other services. This differs from the fork, which gives the reflector its own Tailscale node.
 3. On the phone: Tailscale on (with subnet routes allowed), then SideStore → Settings → **Connection Config** → **Use Local VPN** off (Remote Endpoint mode), **Device IP** `10.7.0.1`, RemotePair Port empty. Health Check → Device Reachability should be green. If it's slow, raise Developer Options → Device (TCP) Probe Timeout to 2000 ms.
 

@@ -1,0 +1,16 @@
+[Unit]
+Description=SideStore reflector (10.7.0.1 over Tailscale)
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+ExecStartPre=-/usr/bin/ip tuntap add dev sidestore mode tun
+ExecStartPre=/usr/bin/ip addr replace 10.7.0.2 peer 10.7.0.1 dev sidestore
+ExecStartPre=/usr/bin/ip link set sidestore up
+ExecStart=/usr/local/bin/sidestore-reflect sidestore 10.7.0.1
+ExecStopPost=-/usr/bin/ip link del sidestore
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
