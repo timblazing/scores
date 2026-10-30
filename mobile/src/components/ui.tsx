@@ -4,6 +4,7 @@ import { Image } from 'expo-image'
 import * as Haptics from 'expo-haptics'
 import { SymbolView } from 'expo-symbols'
 import type { ReactNode } from 'react'
+import type { LeagueId } from '@/lib/espn'
 import { ActivityIndicator, Pressable, RefreshControl, Text as RNText, View, type StyleProp, type TextProps, type TextStyle, type ViewStyle } from 'react-native'
 import { toggleFavorite, useFavorites, type Favorite } from '@/lib/favorites'
 import { card, colors, radius } from '@/theme'
@@ -19,6 +20,13 @@ export const Muted = ({ style, ...rest }: TextProps & { tnum?: boolean }) => <Te
 export function Logo({ src, size = 32, style }: { src?: string; size?: number; style?: StyleProp<ViewStyle> }) {
   if (!src) return <View style={[{ width: size, height: size, borderRadius: size / 2, backgroundColor: colors.raised }, style]} />
   return <Image source={src} style={[{ width: size, height: size }, style as object]} contentFit="contain" cachePolicy="memory-disk" recyclingKey={src} />
+}
+
+const LEAGUE_SYMBOLS = { nfl: 'football', cfb: 'graduationcap', nba: 'basketball' } as const
+
+/** ESPN has no usable league logos for all three leagues, so rows use an SF Symbol. */
+export function LeagueIcon({ league, size = 22, color = colors.muted }: { league: LeagueId; size?: number; color?: string }) {
+  return <SymbolView name={LEAGUE_SYMBOLS[league]} size={size} tintColor={color} />
 }
 
 export function Headshot({ src, size = 40 }: { src?: string; size?: number }) {
@@ -49,7 +57,7 @@ export function Divider({ inset = 0 }: { inset?: number }) {
 
 /** Rows separated by hairlines. */
 export function Rows({ children }: { children: ReactNode[] | ReactNode }) {
-  const items = (Array.isArray(children) ? children : [children]).filter(Boolean)
+  const items = (Array.isArray(children) ? children : [children]).flat().filter(Boolean)
   return (
     <>
       {items.map((c, i) => (
@@ -154,13 +162,14 @@ export function Segmented<T extends string>({
 }
 
 /** Native SwiftUI menu for the header that reads "Label ⌄" and lists the options with a checkmark on the current one. */
-export function HeaderMenu<T extends string>({ value, onChange, options }: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[] }) {
+export function HeaderMenu<T extends string>({ value, onChange, options }: { value: T; onChange: (v: T) => void; options: { value: T; label: string; short?: string }[] }) {
+  const current = options.find((o) => o.value === value)
   return (
     <Host matchContents colorScheme="dark">
       <Menu
         label={
           <HStack spacing={5} modifiers={[padding({ horizontal: 12, vertical: 6 })]}>
-            <SUIText modifiers={[font({ size: 17, weight: 'semibold' })]}>{options.find((o) => o.value === value)?.label ?? ''}</SUIText>
+            <SUIText modifiers={[font({ size: 17, weight: 'semibold' })]}>{current?.short ?? current?.label ?? ''}</SUIText>
             <SUIImage systemName="chevron.down" size={13} color={colors.muted} />
           </HStack>
         }

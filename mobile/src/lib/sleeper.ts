@@ -2,19 +2,23 @@
 // Docs: https://docs.sleeper.com — projections come from the undocumented api.sleeper.com feed,
 // the same one the sleeper-fantasy-dashboard repo uses.
 
+import type { SleeperUser } from './settings'
+
 type Any = any
 
 const API = 'https://api.sleeper.app/v1'
 const API2 = 'https://api.sleeper.com'
 
-/** This app is just for one Sleeper account, so the user and leagues are fixed. */
-export const SLEEPER_USER_ID = '1028415641872699392' // timblazing
-export const FANTASY_LEAGUES = [
-  { id: '1389391504413310976', name: 'Slim Pickens Memorial League', short: 'Slim Pickens' },
-  { id: '1388584098439639040', name: 'Oiled Down', short: 'Oiled Down' },
-] as const
-export type FantasyLeagueId = (typeof FANTASY_LEAGUES)[number]['id']
-export const isFantasyLeague = (v: unknown): v is FantasyLeagueId => FANTASY_LEAGUES.some((l) => l.id === v)
+/** League name short enough for the header menu, so the Matchup / League / Standings tabs still fit. */
+export function shortLeagueName(name: string, max = 16) {
+  const words = name.replace(/\s+league$/i, '').split(/\s+/)
+  let out = words[0]
+  for (const w of words.slice(1)) {
+    if ((out + ' ' + w).length > max) break
+    out += ' ' + w
+  }
+  return out
+}
 
 async function get<T = Any>(url: string): Promise<T> {
   const res = await fetch(url)
@@ -81,6 +85,17 @@ export const avatarUrl = (id?: string | null) => (!id ? undefined : id.startsWit
 export const isDefense = (id: string) => /^[A-Z]{2,4}$/.test(id)
 
 /* ---------- requests ---------- */
+
+/** Sleeper answers 200 with a null body for unknown usernames. */
+export async function getSleeperUser(username: string): Promise<SleeperUser | null> {
+  const u = await get(`${API}/user/${encodeURIComponent(username)}`)
+  return u?.user_id ? { userId: u.user_id, username: u.username ?? username, displayName: u.display_name } : null
+}
+
+export async function getUserLeagues(userId: string, season: string): Promise<{ id: string; name: string }[]> {
+  const ls = await get<Any[]>(`${API}/user/${userId}/leagues/nfl/${season}`)
+  return (ls ?? []).map((l) => ({ id: l.league_id, name: l.name }))
+}
 
 export async function getNflState(): Promise<NflState> {
   const s = await get(`${API}/state/nfl`)

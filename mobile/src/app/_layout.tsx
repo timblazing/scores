@@ -6,6 +6,8 @@ import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
 import { queryClient, subscribeAppFocus } from '@/lib/query'
+import Onboarding from '@/screens/Onboarding'
+import { useSettings } from '@/lib/settings'
 import { colors } from '@/theme'
 
 SplashScreen.preventAutoHideAsync()
@@ -16,6 +18,7 @@ const theme = {
 }
 
 export default function RootLayout() {
+  const { onboarded } = useSettings()
   const [loaded, error] = useFonts({ BarlowCondensed_600SemiBold })
   useEffect(subscribeAppFocus, [])
   useEffect(() => {
@@ -27,20 +30,28 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider value={theme}>
         <StatusBar style="light" />
-        {/* Screens set their own inset behavior; detail pages draw under the header with "never". */}
-        <NativeTabs tintColor={colors.fg}>
-          <NativeTabs.Trigger name="(home)" disableAutomaticContentInsets>
-            <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-            <NativeTabs.Trigger.Icon sf="house" />
-          </NativeTabs.Trigger>
-          <NativeTabs.Trigger name="(fantasy)" disableAutomaticContentInsets>
-            <NativeTabs.Trigger.Label>Fantasy</NativeTabs.Trigger.Label>
-            <NativeTabs.Trigger.Icon sf="football" />
-          </NativeTabs.Trigger>
-          <NativeTabs.Trigger name="(search)" role="search" disableAutomaticContentInsets>
-            <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>
-          </NativeTabs.Trigger>
-        </NativeTabs>
+        {onboarded ? (
+          // Screens set their own inset behavior; detail pages draw under the header with "never".
+          <NativeTabs tintColor={colors.fg}>
+            <NativeTabs.Trigger name="(scores)" disableAutomaticContentInsets>
+              <NativeTabs.Trigger.Label>Scores</NativeTabs.Trigger.Label>
+              <NativeTabs.Trigger.Icon sf="sportscourt" />
+            </NativeTabs.Trigger>
+            <NativeTabs.Trigger name="(fantasy)" disableAutomaticContentInsets>
+              <NativeTabs.Trigger.Label>Fantasy</NativeTabs.Trigger.Label>
+              <NativeTabs.Trigger.Icon sf="football" />
+            </NativeTabs.Trigger>
+            <NativeTabs.Trigger name="(leagues)" disableAutomaticContentInsets>
+              <NativeTabs.Trigger.Label>Leagues</NativeTabs.Trigger.Label>
+              <NativeTabs.Trigger.Icon sf="trophy" />
+            </NativeTabs.Trigger>
+            <NativeTabs.Trigger name="(search)" role="search" disableAutomaticContentInsets>
+              <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>
+            </NativeTabs.Trigger>
+          </NativeTabs>
+        ) : (
+          <Onboarding />
+        )}
       </ThemeProvider>
     </QueryClientProvider>
   )
