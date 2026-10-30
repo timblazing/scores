@@ -104,16 +104,20 @@ export function ErrorState({ error, retry }: { error: unknown; retry?: () => voi
   )
 }
 
+/** Follow or unfollow a team: a success tap when following, a lighter one when unfollowing. */
+export function toggleFollow(fav: Favorite, following?: boolean) {
+  if (following) Haptics.selectionAsync()
+  else Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+  toggleFavorite(fav)
+}
+
 export function FavButton({ fav, size = 18, color }: { fav: Favorite; size?: number; color?: string }) {
   const { isFav } = useFavorites()
   const on = isFav(fav.league, fav.id)
   return (
     <Pressable
       hitSlop={10}
-      onPress={() => {
-        Haptics.selectionAsync()
-        toggleFavorite(fav)
-      }}
+      onPress={() => toggleFollow(fav, on)}
       accessibilityRole="button"
       accessibilityLabel={on ? `Unfollow ${fav.name}` : `Follow ${fav.name}`}
       style={{ padding: 4 }}
@@ -228,6 +232,7 @@ export function usePullRefresh(refetch: () => Promise<unknown> | unknown) {
       refreshing={refreshing}
       tintColor={colors.muted}
       onRefresh={async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
         setRefreshing(true)
         try {
           await refetch()
