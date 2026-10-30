@@ -144,12 +144,12 @@ export function Leaders({ raw, game, title }: { raw: Any; game: Game; title: str
   const pick = (t: Any, name: string) => t?.leaders?.find((c: Any) => c.name === name)
   return (
     <Card title={title}>
-      {cats.slice(0, 5).map((name) => {
+      {cats.slice(0, 5).map((name, i) => {
         const a = pick(away, name)
         const h = pick(home, name)
         return (
           <View key={name}>
-            <Divider />
+            {i > 0 && <Divider />}
             <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
               <Text style={{ textAlign: 'center', fontSize: 12, color: colors.faint, marginBottom: 8 }}>{(a ?? h)?.displayName}</Text>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
@@ -207,7 +207,7 @@ export function TeamStatsCompare({ raw, game, limit }: { raw: Any; game: Game; l
   const ac = readable(game.away.color)
   const hc = readable(game.home.color)
   return (
-    <Card title="Team stats">
+    <Card title="Team">
       <View style={{ paddingHorizontal: 16, paddingBottom: 16, gap: 16 }}>
         {(limit ? stats.slice(0, limit) : stats).map((s: { label: string; a: string; h: string }) => {
           const a = num(s.a)
@@ -396,9 +396,9 @@ export function ScoringSummary({ raw, game }: { raw: Any; game: Game }) {
   if (!plays.length) return null
   return (
     <Card title="Scoring summary">
-      {plays.map((p) => (
+      {plays.map((p, i) => (
         <View key={p.id}>
-          <Divider />
+          {i > 0 && <Divider />}
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 16, paddingVertical: 12 }}>
             <Logo src={teamLogo(game.league, p.team?.abbreviation, 48, p.team?.id)} size={24} />
             <View style={{ flex: 1 }}>
