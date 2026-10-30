@@ -125,7 +125,6 @@ const fmtML = (v: unknown) => {
   return n > 0 ? `+${n}` : String(n)
 }
 
-export const hasPossession = (game: Game, side: Side) => game.state === 'in' && game.situation?.possessionId === side.id
 
 export function parseOdds(o: Any): Odds | undefined {
   if (!o) return undefined

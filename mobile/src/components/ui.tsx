@@ -5,7 +5,6 @@ import * as Haptics from 'expo-haptics'
 import { SymbolView } from 'expo-symbols'
 import type { ReactNode } from 'react'
 import { ActivityIndicator, Pressable, RefreshControl, Text as RNText, View, type StyleProp, type TextProps, type TextStyle, type ViewStyle } from 'react-native'
-import Svg, { Path } from 'react-native-svg'
 import { toggleFavorite, useFavorites, type Favorite } from '@/lib/favorites'
 import { card, colors, radius } from '@/theme'
 import { useState } from 'react'
@@ -93,17 +92,6 @@ export function ErrorState({ error, retry }: { error: unknown; retry?: () => voi
           <Text style={{ fontSize: 14, fontWeight: '600' }}>Try again</Text>
         </Pressable>
       )}
-    </View>
-  )
-}
-
-/** Filled triangle beside a score, pointing at the team with the ball. `side` is which team it points at. */
-export function Possession({ side, color = colors.fg }: { side: 'left' | 'right'; color?: string }) {
-  return (
-    <View pointerEvents="none" style={{ position: 'absolute', top: '50%', marginTop: -4, [side === 'left' ? 'left' : 'right']: '100%', [side === 'left' ? 'marginLeft' : 'marginRight']: 5 }}>
-      <Svg width={6} height={8} viewBox="0 0 6 8">
-        <Path d={side === 'left' ? 'M0 4 6 0v8z' : 'M6 4 0 0v8z'} fill={color} />
-      </Svg>
     </View>
   )
 }

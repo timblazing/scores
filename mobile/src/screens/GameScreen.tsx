@@ -8,8 +8,8 @@ import { BoxScore } from '@/components/game/BoxScore'
 import { chartPlays, Plays } from '@/components/game/Plays'
 import { GameInfo, Injuries, LastFive, Leaders, LineScore, OddsCard, periodLabel, Predictor, ScoringSummary, SeasonSeries, TeamStatsCompare } from '@/components/game/sections'
 import { WinChart } from '@/components/game/WinChart'
-import { Card, ErrorState, Loading, Logo, Muted, Possession, Segmented, Text, usePullRefresh } from '@/components/ui'
-import { getSummary, hasPossession, LEAGUES, teamLogo, type Game, type LeagueId, type Side } from '@/lib/espn'
+import { Card, ErrorState, Loading, Logo, Muted, Segmented, Text, usePullRefresh } from '@/components/ui'
+import { getSummary, LEAGUES, teamLogo, type Game, type LeagueId, type Side } from '@/lib/espn'
 import { dateTime, readable, time } from '@/lib/format'
 import { colors, scoreFont } from '@/theme'
 
@@ -113,7 +113,7 @@ function Header({ game }: { game: Game }) {
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingTop: 8 }}>
         <HeaderTeam side={game.away} game={game} />
-        <BigScore side={game.away} other={game.home} game={game} align="left" />
+        <BigScore side={game.away} other={game.home} game={game} />
         <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 2, minWidth: 84 }}>
           {game.state === 'in' ? (
             <Text style={{ fontSize: 14, fontWeight: '600', color: colors.live, textAlign: 'center' }}>{game.shortDetail.replace(/ - /, ' · ')}</Text>
@@ -131,7 +131,7 @@ function Header({ game }: { game: Game }) {
             </Text>
           ) : null}
         </View>
-        <BigScore side={game.home} other={game.away} game={game} align="right" />
+        <BigScore side={game.home} other={game.away} game={game} />
         <HeaderTeam side={game.home} game={game} />
       </View>
     </Hero>
@@ -155,16 +155,13 @@ function HeaderTeam({ side, game }: { side: Side; game: Game }) {
   )
 }
 
-function BigScore({ side, other, game, align }: { side: Side; other: Side; game: Game; align: 'left' | 'right' }) {
+function BigScore({ side, other, game }: { side: Side; other: Side; game: Game }) {
   if (game.state === 'pre') return <View style={{ width: 4 }} />
   const lost = game.state === 'post' && Number(side.score) < Number(other.score)
   return (
-    <View>
-      <Text tnum style={{ fontFamily: scoreFont, fontSize: 52, lineHeight: 56, minWidth: 40, textAlign: 'center', color: lost ? 'rgba(245,245,245,0.45)' : colors.fg }}>
-        {side.score}
-      </Text>
-      {hasPossession(game, side) ? <Possession side={align} /> : null}
-    </View>
+    <Text tnum style={{ fontFamily: scoreFont, fontSize: 52, lineHeight: 56, minWidth: 40, textAlign: 'center', color: lost ? 'rgba(245,245,245,0.45)' : colors.fg }}>
+      {side.score}
+    </Text>
   )
 }
 

@@ -1,9 +1,9 @@
 import { Link } from 'expo-router'
 import { Pressable, View } from 'react-native'
-import { hasPossession, type Game, type Side } from '@/lib/espn'
+import type { Game, Side } from '@/lib/espn'
 import { useFavorites } from '@/lib/favorites'
 import { time } from '@/lib/format'
-import { Divider, Logo, Muted, Possession, Text } from './ui'
+import { Divider, Logo, Muted, Text } from './ui'
 import { card, colors, scoreFont } from '@/theme'
 
 function Team({ side, game }: { side: Side; game: Game }) {
@@ -22,7 +22,7 @@ function Team({ side, game }: { side: Side; game: Game }) {
   )
 }
 
-function Score({ side, other, game, align }: { side: Side; other: Side; game: Game; align: 'left' | 'right' }) {
+function Score({ side, other, game }: { side: Side; other: Side; game: Game }) {
   if (game.state === 'pre')
     return (
       <Text numberOfLines={1} tnum style={{ width: 56, textAlign: 'center', fontSize: 12, color: colors.faint }}>
@@ -32,12 +32,9 @@ function Score({ side, other, game, align }: { side: Side; other: Side; game: Ga
   const lost = game.state === 'post' && (side.winner === false || Number(side.score) < Number(other.score))
   return (
     <View style={{ width: 56, alignItems: 'center' }}>
-      <View>
-        <Text tnum style={{ fontFamily: scoreFont, fontSize: 36, lineHeight: 40, color: lost ? colors.faint : colors.fg }}>
-          {side.score ?? '-'}
-        </Text>
-        {hasPossession(game, side) ? <Possession side={align} /> : null}
-      </View>
+      <Text tnum style={{ fontFamily: scoreFont, fontSize: 36, lineHeight: 40, color: lost ? colors.faint : colors.fg }}>
+        {side.score ?? '-'}
+      </Text>
     </View>
   )
 }
@@ -66,7 +63,7 @@ export function GameRow({ game }: { game: Game }) {
     <Link href={`/game/${game.league}/${game.id}`} asChild>
       <Pressable style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 10, paddingVertical: 12 }}>
         <Team side={game.away} game={game} />
-        <Score side={game.away} other={game.home} game={game} align="left" />
+        <Score side={game.away} other={game.home} game={game} />
         <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 2 }}>
           <Status game={game} />
           {game.broadcast && game.state === 'pre' ? (
@@ -75,7 +72,7 @@ export function GameRow({ game }: { game: Game }) {
             </Text>
           ) : null}
         </View>
-        <Score side={game.home} other={game.away} game={game} align="right" />
+        <Score side={game.home} other={game.away} game={game} />
         <Team side={game.home} game={game} />
       </Pressable>
     </Link>
