@@ -1,12 +1,14 @@
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { getScoreboard, type Game } from './espn'
+import { useSettings } from './settings'
 import {
   getFantasyLeague,
   getFantasyMatchups,
   getFantasyPlayer,
   getFantasyTeams,
   getNflState,
+  getUserLeagues,
   getWeekProjections,
   projectPoints,
   type FantasyLeague,
@@ -18,6 +20,20 @@ import {
 export const useNflState = () => useQuery({ queryKey: ['sleeper', 'state'], queryFn: getNflState, staleTime: 5 * 60_000 })
 export const useFantasyLeague = (id: string) => useQuery({ queryKey: ['sleeper', 'league', id], queryFn: () => getFantasyLeague(id), staleTime: 60 * 60_000 })
 export const useFantasyTeams = (id: string) => useQuery({ queryKey: ['sleeper', 'teams', id], queryFn: () => getFantasyTeams(id), staleTime: 60_000 })
+
+/** The Sleeper user's leagues for the current season, with `visible` leaving out the ones hidden in settings. */
+export function useMyFantasyLeagues() {
+  const { sleeper, hiddenFantasy } = useSettings()
+  const state = useNflState()
+  const q = useQuery({
+    queryKey: ['sleeper', 'leagues', sleeper?.userId, state.data?.season],
+    queryFn: () => getUserLeagues(sleeper!.userId, state.data!.season),
+    enabled: !!sleeper && !!state.data,
+    staleTime: 10 * 60_000,
+  })
+  const visible = q.data?.filter((l) => !hiddenFantasy.includes(l.id))
+  return { ...q, isPending: !!sleeper && (state.isPending || q.isPending), all: q.data, visible }
+}
 
 /** ESPN's NFL games for a regular-season week, keyed by team abbreviation (Sleeper's spelling). */
 export function useNflWeekGames(season: string | undefined, week: number) {

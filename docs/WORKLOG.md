@@ -2,6 +2,20 @@
 
 Running notes on what's built, why, and what's next. Read this before starting a new session.
 
+## Slate — what's next
+
+Keep this list current at the end of every session; session notes below are history. Last updated: Session 8, 2026-10-29.
+
+**State:** `main` has the native Expo app in `mobile/` with tabs Scores (gear → Settings), Fantasy, Leagues and Search, plus first-launch onboarding (PRs #8, #9). The build from that `main` was sideloaded to the owner's iPhone through SideStore on 2026-10-29.
+
+**Up next, in order:**
+
+1. **Owner feedback on the phone build.** Ask how the Scores hub, onboarding, Settings and Leagues feel on the device. Fix anything they flag first.
+2. **More design refinement.** The owner said more design notes are coming after the Session 8 batch. Ask for them, show options as side-by-side simulator screenshots, and let the owner choose (`mobile/AGENTS.md` → "design work with the owner").
+3. **Unverified bits from Session 8.** Fantasy's empty-state "Open Settings" button (`/settings` exists in the `(scores)`, `(fantasy)` and `(leagues)` groups; make sure it opens in the current tab).
+4. **Native features to explore.** Pitch these to the owner before building: haptics, context menus and link previews on game rows, `@expo/ui` SwiftUI controls, home-screen widgets, and Live Activities for live games.
+5. **Parked.** Bring the football possession indicator back in some form. The owner disliked the left/right arrow and dropped it for now.
+
 ## Session 1 — 2026-10-20
 
 ### What shipped
@@ -186,3 +200,15 @@ Gotchas:
 - The owner keeps the phone on the newest iOS: the iOS 27 public beta, moving to the **iOS 27.2 release candidate**. Downloaded the iOS 27.1 simulator runtime (Xcode 27.1). It only supports the iPhone Duo, but the iOS 27.0 runtime, installed too, supports the iPhone 16 Pro, so one was created on 27.0 (UDID in README). The Release build runs on iOS 27.0, checked on the iPhone 18 Pro simulator because T3's Device panel didn't list the new iPhone 16 Pro yet.
 - README now covers the Release simulator build. `mobile/AGENTS.md` collects the agent-device lessons from Session 6: stale snapshots after search typing, stale refs, the coordinate scale and the swipe-back gesture.
 - **Owner's next focus:** refine the design to their taste, and explore native components, features and tools the Expo rebuild makes possible (e.g. `@expo/ui` SwiftUI controls, widgets / Live Activities, haptics, context menus and link previews). Have the owner pick the directions before building. They want options shown as side-by-side simulator screenshots in a later session; the workflow is in `mobile/AGENTS.md` → "design work with the owner".
+
+## Session 8 — 2026-10-29 — Scores hub, settings, onboarding
+
+- Game page polish (PR #8): centered records, no star in the header, a "Team" tab, an untitled win probability card, no top divider on Leaders / Scoring summary, and the possession indicator removed per the owner.
+- **Home became Scores** (`(scores)` tab, `screens/ScoresScreen.tsx`): one page for every followed league, yesterday through the next 7 days, no league menu or date strip. Per-day, per-league ESPN scoreboards (date ranges return 400), deduped by `league:id` and bucketed by local start day. Sections: Yesterday (finals, collapsed), My Teams, Live, Today (by league), then one collapsible section per upcoming day (tomorrow open). My Teams holds today's games for favorites plus each favorite's next game, labeled with its day. Outside My Teams, college football shows only Top 25 games. Settings opens from a gear button at top right.
+- **Leagues tab** (`(leagues)`): list of followed leagues, each opening Standings / News (`screens/LeagueScreen.tsx`, moved from the old Home screen).
+- **Settings** (`lib/settings.ts`, one kv-store blob): followed leagues (at least one), favorite teams picker (`components/TeamPicker.tsx`), Sleeper username (validated against `api.sleeper.app/v1/user/<name>`), per-league show/hide for Fantasy, and "Show onboarding again". **Onboarding** (`screens/Onboarding.tsx`) replaces the tabs until finished; existing installs see it once.
+- Fantasy no longer hardcodes the account: leagues come from the Sleeper user's current-season leagues (`useMyFantasyLeagues`), minus hidden ones.
+- The Leagues list is the `leagues` route, not `index`: two tab groups with `index` both claim `/`, and the app opened on Leagues.
+- The Fantasy header menu shows a shortened league name (`shortLeagueName`); the full "Slim Pickens Memorial League" pushed the Matchup / League / Standings tabs into an overflow menu.
+- Removed `homeSelection.ts` and the old Home screen.
+- Verified on the iPhone 18 Pro simulator (iOS 27.0, Release build): onboarding (leagues, starring a team from search, Sleeper lookup for timblazing), Scores with live games, My Teams and collapsible days, the gear → Settings, hiding a fantasy league, Fantasy header, Leagues → NFL standings, and opening a game from Scores. Not verified: the "Open Settings" button on Fantasy's empty state (`/settings` exists in three tab groups), and the phone.

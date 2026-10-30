@@ -2,6 +2,8 @@
 
 Read `README.md` for the active Expo app and build commands. For work in `mobile/`, also read `mobile/AGENTS.md`.
 
+When the owner asks where things left off or what's on the slate, answer from the **Slate** section at the top of `docs/WORKLOG.md`. Update that section at the end of every session.
+
 ## T3 Code Device panel
 
 When working in T3 Code, use its built-in **Device panel** for iOS Simulator / Android Emulator work so the owner can see and interact with the running app.

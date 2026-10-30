@@ -15,6 +15,8 @@ export const LEAGUES: Record<LeagueId, { id: LeagueId; sport: string; slug: stri
 
 export const LEAGUE_IDS: LeagueId[] = ['nfl', 'cfb', 'nba']
 
+export const LEAGUE_TITLES: Record<LeagueId, string> = { nfl: 'NFL', cfb: 'College Football', nba: 'NBA' }
+
 export const isLeague = (v: unknown): v is LeagueId => typeof v === 'string' && v in LEAGUES
 
 // College football is limited to FBS (ESPN group 80).

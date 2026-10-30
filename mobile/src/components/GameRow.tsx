@@ -2,7 +2,7 @@ import { Link } from 'expo-router'
 import { Pressable, View } from 'react-native'
 import type { Game, Side } from '@/lib/espn'
 import { useFavorites } from '@/lib/favorites'
-import { time } from '@/lib/format'
+import { dayLabel, time, ymd } from '@/lib/format'
 import { Divider, Logo, Muted, Text } from './ui'
 import { card, colors, scoreFont } from '@/theme'
 
@@ -39,7 +39,7 @@ function Score({ side, other, game }: { side: Side; other: Side; game: Game }) {
   )
 }
 
-function Status({ game }: { game: Game }) {
+function Status({ game, showDay }: { game: Game; showDay?: boolean }) {
   if (game.state === 'in')
     return (
       <>
@@ -48,8 +48,10 @@ function Status({ game }: { game: Game }) {
       </>
     )
   if (game.state === 'post') return <Text style={{ fontSize: 13, fontWeight: '600', textAlign: 'center' }}>{game.shortDetail}</Text>
+  const day = showDay ? dayLabel(ymd(new Date(game.date))) : 'Today'
   return (
     <>
+      {day !== 'Today' ? <Text style={{ fontSize: 11, fontWeight: '600', color: colors.muted, marginBottom: 2 }}>{day}</Text> : null}
       <Text style={{ fontSize: 14, fontWeight: '600', textAlign: 'center' }}>
         {game.timeTBD ? 'TBD' : /postponed|canceled|delayed/i.test(game.detail) ? game.shortDetail : time(game.date)}
       </Text>
@@ -58,14 +60,14 @@ function Status({ game }: { game: Game }) {
   )
 }
 
-export function GameRow({ game }: { game: Game }) {
+export function GameRow({ game, showDay }: { game: Game; showDay?: boolean }) {
   return (
     <Link href={`/game/${game.league}/${game.id}`} asChild>
       <Pressable style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 10, paddingVertical: 12 }}>
         <Team side={game.away} game={game} />
         <Score side={game.away} other={game.home} game={game} />
         <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 2 }}>
-          <Status game={game} />
+          <Status game={game} showDay={showDay} />
           {game.broadcast && game.state === 'pre' ? (
             <Text numberOfLines={1} style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>
               {game.broadcast}
@@ -79,13 +81,14 @@ export function GameRow({ game }: { game: Game }) {
   )
 }
 
-export function GameList({ games }: { games: Game[] }) {
+/** `showDay` labels upcoming games that aren't today with their day. */
+export function GameList({ games, showDay }: { games: Game[]; showDay?: boolean }) {
   return (
     <View style={card}>
       {games.map((g, i) => (
         <View key={g.id}>
           {i > 0 && <Divider />}
-          <GameRow game={g} />
+          <GameRow game={g} showDay={showDay} />
         </View>
       ))}
     </View>

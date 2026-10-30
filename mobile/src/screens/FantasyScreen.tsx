@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { Stack } from 'expo-router'
+import { router, Stack } from 'expo-router'
 import { useMemo, useState } from 'react'
-import { ScrollView, View } from 'react-native'
+import { Pressable, ScrollView, View } from 'react-native'
 import { Avatar, HeadToHead, MatchupCard } from '@/components/fantasy'
 import { useHeaderInset } from '@/components/Hero'
 import { StatTable, type TableRow } from '@/components/StatTable'
@@ -9,20 +9,58 @@ import { STRIP_HEIGHT, Strip, type StripItem } from '@/components/Strip'
 import { Card, Empty, ErrorState, HeaderMenu, Loading, Tabs, Text, usePullRefresh } from '@/components/ui'
 import { getScoreboard } from '@/lib/espn'
 import { setFantasyLeague, setFantasyView, useFantasySelection } from '@/lib/fantasySelection'
-import { FANTASY_LEAGUES, SLEEPER_USER_ID, type FantasyLeague, type FantasyMatchup, type FantasyTeam } from '@/lib/sleeper'
-import { scoreMatchup, useFantasyLeague, useFantasyMatchups, useFantasyPlayers, useFantasyTeams, useNflState, useNflWeekGames, useProjections } from '@/lib/useFantasy'
+import { useSettings } from '@/lib/settings'
+import { shortLeagueName, type FantasyLeague, type FantasyMatchup, type FantasyTeam } from '@/lib/sleeper'
+import { scoreMatchup, useFantasyLeague, useFantasyMatchups, useFantasyPlayers, useMyFantasyLeagues, useFantasyTeams, useNflState, useNflWeekGames, useProjections } from '@/lib/useFantasy'
 import { colors } from '@/theme'
 
 const scrollProps = { contentInsetAdjustmentBehavior: 'automatic' as const, showsVerticalScrollIndicator: false }
 
+function Prompt({ children, action }: { children: string; action?: { label: string; onPress: () => void } }) {
+  return (
+    <View style={{ paddingHorizontal: 12, paddingTop: 8, gap: 12 }}>
+      <Empty>{children}</Empty>
+      {action && (
+        <Pressable onPress={action.onPress} style={{ alignSelf: 'center', backgroundColor: colors.raised, paddingHorizontal: 20, paddingVertical: 11, borderRadius: 100 }}>
+          <Text style={{ fontSize: 15, fontWeight: '600' }}>{action.label}</Text>
+        </Pressable>
+      )}
+    </View>
+  )
+}
+
 export default function FantasyScreen() {
-  const { league, view } = useFantasySelection()
+  const { league: stored, view } = useFantasySelection()
+  const { sleeper } = useSettings()
+  const mine = useMyFantasyLeagues()
+  const leagues = mine.visible ?? []
+  const league = leagues.find((l) => l.id === stored)?.id ?? leagues[0]?.id
+
+  if (!sleeper || !league) {
+    return (
+      <>
+        <Stack.Screen options={{ title: '' }} />
+        {!sleeper ? (
+          <Prompt action={{ label: 'Open Settings', onPress: () => router.push('/settings') }}>Add your Sleeper username in Settings</Prompt>
+        ) : mine.isPending ? (
+          <Loading />
+        ) : mine.isError ? (
+          <View style={{ padding: 12 }}>
+            <ErrorState error={mine.error} retry={mine.refetch} />
+          </View>
+        ) : (
+          <Prompt action={{ label: 'Open Settings', onPress: () => router.push('/settings') }}>{mine.all?.length ? 'All your leagues are hidden' : 'No Sleeper leagues this season'}</Prompt>
+        )}
+      </>
+    )
+  }
+
   return (
     <>
       <Stack.Screen options={{ title: '' }} />
       <Stack.Toolbar placement="left">
         <Stack.Toolbar.View>
-          <HeaderMenu value={league} onChange={setFantasyLeague} options={FANTASY_LEAGUES.map((l) => ({ value: l.id, label: l.short }))} />
+          <HeaderMenu value={league} onChange={setFantasyLeague} options={leagues.map((l) => ({ value: l.id, label: l.name, short: shortLeagueName(l.name) }))} />
         </Stack.Toolbar.View>
       </Stack.Toolbar>
       <Stack.Toolbar placement="right">
@@ -62,6 +100,7 @@ const lastWeek = (l: FantasyLeague) => Math.min(18, l.playoffWeekStart + 2)
 
 /** The week strip plus either my matchup in full or every matchup in the league. */
 function WeekView({ id, mine }: { id: string; mine: boolean }) {
+  const userId = useSettings().sleeper?.userId
   const inset = useHeaderInset()
   const state = useNflState()
   const league = useFantasyLeague(id)
@@ -83,7 +122,7 @@ function WeekView({ id, mine }: { id: string; mine: boolean }) {
   const proj = useProjections(season, week)
   const refresh = usePullRefresh(() => Promise.all([matchups.refetch(), teams.refetch(), state.refetch()]))
 
-  const myRoster = teams.data?.find((t) => t.ownerId === SLEEPER_USER_ID)?.rosterId
+  const myRoster = teams.data?.find((t) => t.ownerId === userId)?.rosterId
   const all = pairs(matchups.data ?? [], myRoster)
   const error = league.error ?? matchups.error ?? teams.error
   const team = (abbr: string | null | undefined) => (abbr ? games.byTeam.get(abbr) : undefined)
@@ -118,6 +157,7 @@ function MyMatchup({ league, pair, teams, proj, team }: { league: FantasyLeague;
 
 /** Head-to-head for any matchup in a league, opened from the League list. `matchup` is a matchup id, or `r<rosterId>` for a team without one. */
 export function MatchupDetail({ id, week, matchup }: { id: string; week: number; matchup: string }) {
+  const userId = useSettings().sleeper?.userId
   const state = useNflState()
   const league = useFantasyLeague(id)
   const teams = useFantasyTeams(id)
@@ -128,7 +168,7 @@ export function MatchupDetail({ id, week, matchup }: { id: string; week: number;
   const refresh = usePullRefresh(() => Promise.all([matchups.refetch(), teams.refetch()]))
   const team = (abbr: string | null | undefined) => (abbr ? games.byTeam.get(abbr) : undefined)
 
-  const myRoster = teams.data?.find((t) => t.ownerId === SLEEPER_USER_ID)?.rosterId
+  const myRoster = teams.data?.find((t) => t.ownerId === userId)?.rosterId
   const pair = pairs(matchups.data ?? [], myRoster).find(([a]) => (matchup.startsWith('r') ? `r${a.rosterId}` === matchup : String(a.matchupId) === matchup))
   const error = league.error ?? matchups.error
 
@@ -146,6 +186,7 @@ export function MatchupDetail({ id, week, matchup }: { id: string; week: number;
 const byRecord = (a: FantasyTeam, b: FantasyTeam) => b.wins + b.ties / 2 - (a.wins + a.ties / 2) || b.pointsFor - a.pointsFor
 
 function StandingsView({ id }: { id: string }) {
+  const userId = useSettings().sleeper?.userId
   const league = useFantasyLeague(id)
   const teams = useFantasyTeams(id)
   const refresh = usePullRefresh(() => Promise.all([teams.refetch(), league.refetch()]))
@@ -162,12 +203,12 @@ function StandingsView({ id }: { id: string }) {
         groups.map((g) => {
           const rows: TableRow[] = [...g.teams].sort(byRecord).map((t, i) => ({
             key: String(t.rosterId),
-            bold: t.ownerId === SLEEPER_USER_ID,
+            bold: t.ownerId === userId,
             left: (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Text tnum style={{ width: 16, textAlign: 'right', fontSize: 12, color: colors.faint }}>{i + 1}</Text>
                 <Avatar src={t.avatar} size={22} />
-                <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: t.ownerId === SLEEPER_USER_ID ? '700' : '500', flexShrink: 1 }}>
+                <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: t.ownerId === userId ? '700' : '500', flexShrink: 1 }}>
                   {t.name}
                 </Text>
               </View>
