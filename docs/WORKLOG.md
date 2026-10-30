@@ -4,17 +4,27 @@ Running notes on what's built, why, and what's next. Read this before starting a
 
 ## Slate — what's next
 
-Keep this list current at the end of every session; session notes below are history. Last updated: Session 8, 2026-10-29.
+Keep this list current at the end of every session; session notes below are history. Last updated: Session 9, 2026-10-30.
 
-**State:** `main` has the native Expo app in `mobile/` with tabs Scores (gear → Settings), Fantasy, Leagues and Search, plus first-launch onboarding (PRs #8, #9). The build from that `main` was sideloaded to the owner's iPhone through SideStore on 2026-10-29.
+**State:** `main` has the native Expo app in `mobile/` with tabs Scores (gear → Settings), Fantasy, Leagues and Search, plus first-launch onboarding (PRs #8, #9). The build from that `main` was sideloaded to the owner's iPhone through SideStore on 2026-10-29. Session 9 added link previews, context menus and more haptics in a PR (not yet checked in the simulator).
 
 **Up next, in order:**
 
-1. **Owner feedback on the phone build.** Ask how the Scores hub, onboarding, Settings and Leagues feel on the device. Fix anything they flag first.
-2. **More design refinement.** The owner said more design notes are coming after the Session 8 batch. Ask for them, show options as side-by-side simulator screenshots, and let the owner choose (`mobile/AGENTS.md` → "design work with the owner").
-3. **Unverified bits from Session 8.** Fantasy's empty-state "Open Settings" button (`/settings` exists in the `(scores)`, `(fantasy)` and `(leagues)` groups; make sure it opens in the current tab).
-4. **Native features to explore.** Pitch these to the owner before building: haptics, context menus and link previews on game rows, `@expo/ui` SwiftUI controls, home-screen widgets, and Live Activities for live games.
-5. **Parked.** Bring the football possession indicator back in some form. The owner disliked the left/right arrow and dropped it for now.
+1. **Check Session 9 on the simulator.** Press-and-hold a game row (preview, Follow/Unfollow, Share) and a Search team row; pull-to-refresh and follow haptics. Needs the Mac: this session ran on the Pi with no iOS device host.
+2. **More design refinement.** The owner is focused on design next. Ask for notes, show options as side-by-side simulator screenshots, and let the owner choose (`mobile/AGENTS.md` → "design work with the owner").
+3. **Phone testing.** The owner will test on the phone once the design is settled; don't push for it before then.
+4. **Native features still open:** `@expo/ui` SwiftUI controls. Widgets: not yet (owner).
+5. **Parked.**
+   - **Live Activities for favorites' live games.** The owner wants them, but updates while the app is closed need ActivityKit push, which free Apple accounts (SideStore signing) can't get. Options: the $99/yr Apple Developer Program plus a Cloudflare Worker that watches ESPN and sends APNs pushes (also ends weekly SideStore refreshes), or a free version that only updates while the app is open. Owner chose to skip for now (2026-10-30).
+   - Football possession indicator, in some form other than the left/right arrow.
+   - Fantasy's empty-state "Open Settings" button is unverified; the owner says it isn't a priority.
+   - SideStore over Tailscale instead of LocalDevVPN: possible with a reflector on the Pi (`docs/IOS_SIDELOADING.md`); owner said not now.
+
+## Session 9 — 2026-10-30 — Link previews, context menus, haptics
+
+- Game rows (`GameRow.tsx`): press and hold for the native game page preview and a menu with Follow/Unfollow for each team and Share (ESPN game link with the score line). Search team rows (`TeamItem.tsx`): preview plus Follow/Unfollow.
+- Haptics: `toggleFollow` in `components/ui.tsx` gives a success tap when following and a selection tap when unfollowing (star buttons, team page, menus). Pull-to-refresh starts with a light tap. A success tap fires when a My Teams live game changes score (`useScoreTaps` in `ScoresScreen.tsx`).
+- Typecheck and lint pass. Not run on the simulator or phone.
 
 ## Session 1 — 2026-10-20
 

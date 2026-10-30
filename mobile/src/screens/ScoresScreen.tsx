@@ -2,7 +2,7 @@ import { useQueries, useQueryClient } from '@tanstack/react-query'
 import { router, Stack } from 'expo-router'
 import * as Haptics from 'expo-haptics'
 import { SymbolView } from 'expo-symbols'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
 import { GameList } from '@/components/GameRow'
 import { Empty, ErrorState, Loading, Muted, Text, usePullRefresh } from '@/components/ui'
@@ -67,6 +67,22 @@ function Collapsible({ title, count, open: initial = false, children }: { title:
   )
 }
 
+/** A success tap when a followed team's live game changes score while the app is open (Scores keeps polling under other tabs). */
+function useScoreTaps(games: Game[]) {
+  const seen = useRef(new Map<string, string>())
+  const key = games.filter((g) => g.state === 'in').map((g) => `${g.league}:${g.id}=${g.away.score}-${g.home.score}`).join('|')
+  useEffect(() => {
+    let changed = false
+    for (const part of key ? key.split('|') : []) {
+      const [id, score] = part.split('=')
+      const before = seen.current.get(id)
+      if (before !== undefined && before !== score) changed = true
+      seen.current.set(id, score)
+    }
+    if (changed) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+  }, [key])
+}
+
 export default function ScoresScreen() {
   const { leagues } = useSettings()
   const { isFav } = useFavorites()
@@ -114,6 +130,8 @@ export default function ScoresScreen() {
     .slice(PAST + 1)
     .map((d) => ({ d, games: rest.filter((g) => g.state === 'pre' && localDay(g) === d && show(g)).sort((a, b) => a.date.localeCompare(b.date)) }))
     .filter((x) => x.games.length)
+
+  useScoreTaps(myGames)
 
   const pending = results.every((r) => r.isPending)
   const failed = results.length > 0 && results.every((r) => r.isError)

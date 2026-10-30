@@ -35,6 +35,14 @@ The [README](../README.md#setup-troubleshooting-verified-2026-10-27) records the
 
 Sources: [SideStore FAQ](https://docs.sidestore.io/docs/faq), [installation guide](https://docs.sidestore.io/docs/installation/install).
 
+### Refreshing over Tailscale instead of LocalDevVPN (not set up)
+
+Checked 2026-10-30. iOS runs one VPN at a time, so with Tailscale always on, SideStore's refresh needs LocalDevVPN switched on in its place. The community project [sidestore-vpn-tailscale](https://github.com/shiqi917/sidestore-vpn-tailscale) (a fork of [xddxdd/sidestore-vpn](https://github.com/xddxdd/sidestore-vpn)) removes the switch: a Linux machine on the tailnet reflects SideStore's packets back to the phone, and SideStore points at that machine in **Settings → Connection Config** with **Use Local VPN** off (Remote Endpoint mode, Device IP = the reflector's Tailscale IP).
+
+- Needs an always-on Linux box on the tailnet (the Raspberry Pi would do; the project ships Docker but the reflector is a small Rust program that can run as a plain service), SideStore 0.6.3+ with an RPPairing pairing file from iloader, and `--snat-subnet-routes=false` on that node.
+- The phone must be on some Wi-Fi: iOS closes the services SideStore needs on cellular, with any VPN.
+- Community project, not SideStore documentation. Untested here; the owner chose to keep LocalDevVPN for now.
+
 ## AltStore Classic: an alternative to SideStore
 
 AltStore Classic signs and installs IPAs with your Apple Account. Its standard workflow uses AltServer running on a computer: the phone connects over the same Wi-Fi network or USB for installation and refresh. AltStore attempts background refresh when AltServer is reachable.

@@ -1,10 +1,10 @@
 import { Link } from 'expo-router'
-import { Pressable, View } from 'react-native'
-import type { Game, Side } from '@/lib/espn'
+import { Pressable, Share, View } from 'react-native'
+import { LEAGUES, type Game, type Side } from '@/lib/espn'
 import { useFavorites } from '@/lib/favorites'
 import { dayLabel, time, ymd } from '@/lib/format'
-import { Divider, Logo, Muted, Text } from './ui'
-import { card, colors, scoreFont } from '@/theme'
+import { Divider, Logo, Muted, Text, toggleFollow } from './ui'
+import { card, colors, radius, scoreFont } from '@/theme'
 
 function Team({ side, game }: { side: Side; game: Game }) {
   const { isFav } = useFavorites()
@@ -60,23 +60,48 @@ function Status({ game, showDay }: { game: Game; showDay?: boolean }) {
   )
 }
 
+function shareGame(game: Game) {
+  const url = `https://www.espn.com/${LEAGUES[game.league].slug}/game/_/gameId/${game.id}`
+  const { away, home } = game
+  const line = game.state === 'pre' ? `${away.abbr} at ${home.abbr}` : `${away.abbr} ${away.score ?? ''}, ${home.abbr} ${home.score ?? ''} · ${game.shortDetail}`
+  Share.share({ message: line, url })
+}
+
 export function GameRow({ game, showDay }: { game: Game; showDay?: boolean }) {
+  const { isFav } = useFavorites()
   return (
     <Link href={`/game/${game.league}/${game.id}`} asChild>
-      <Pressable style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 10, paddingVertical: 12 }}>
-        <Team side={game.away} game={game} />
-        <Score side={game.away} other={game.home} game={game} />
-        <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 2 }}>
-          <Status game={game} showDay={showDay} />
-          {game.broadcast && game.state === 'pre' ? (
-            <Text numberOfLines={1} style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>
-              {game.broadcast}
-            </Text>
-          ) : null}
-        </View>
-        <Score side={game.home} other={game.away} game={game} />
-        <Team side={game.home} game={game} />
-      </Pressable>
+      <Link.Trigger>
+        <Pressable style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 10, paddingVertical: 12, borderRadius: radius }}>
+          <Team side={game.away} game={game} />
+          <Score side={game.away} other={game.home} game={game} />
+          <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 2 }}>
+            <Status game={game} showDay={showDay} />
+            {game.broadcast && game.state === 'pre' ? (
+              <Text numberOfLines={1} style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>
+                {game.broadcast}
+              </Text>
+            ) : null}
+          </View>
+          <Score side={game.home} other={game.away} game={game} />
+          <Team side={game.home} game={game} />
+        </Pressable>
+      </Link.Trigger>
+      <Link.Preview />
+      <Link.Menu>
+        {[game.away, game.home].map((s) => {
+          const on = isFav(game.league, s.id)
+          return (
+            <Link.MenuAction
+              key={s.id}
+              title={`${on ? 'Unfollow' : 'Follow'} ${s.name}`}
+              icon={on ? 'star.slash' : 'star'}
+              onPress={() => toggleFollow({ league: game.league, id: s.id, abbr: s.abbr, name: s.displayName || s.name }, on)}
+            />
+          )
+        })}
+        <Link.MenuAction title="Share" icon="square.and.arrow.up" onPress={() => shareGame(game)} />
+      </Link.Menu>
     </Link>
   )
 }

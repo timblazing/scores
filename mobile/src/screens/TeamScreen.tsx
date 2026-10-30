@@ -1,14 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, Stack, useLocalSearchParams } from 'expo-router'
-import * as Haptics from 'expo-haptics'
 import { useState } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Article } from '@/components/Article'
 import { Hero, shade, useHeaderInset } from '@/components/Hero'
-import { Card, Divider, Empty, ErrorState, Headshot, Loading, Logo, Muted, Segmented, Text, usePullRefresh } from '@/components/ui'
+import { Card, Divider, Empty, ErrorState, Headshot, Loading, Logo, Muted, Segmented, Text, toggleFollow, usePullRefresh } from '@/components/ui'
 import { getNews, getRoster, getTeamSchedule, headshot, teamLogo, type Game, type LeagueId } from '@/lib/espn'
-import { toggleFavorite, useFavorites } from '@/lib/favorites'
+import { useFavorites } from '@/lib/favorites'
 import { readable, time } from '@/lib/format'
 import { colors } from '@/theme'
 
@@ -51,10 +50,7 @@ export default function TeamScreen() {
         <Stack.Toolbar.Button
           icon={fav ? 'star.fill' : 'star'}
           accessibilityLabel={fav ? 'Unfollow team' : 'Follow team'}
-          onPress={() => {
-            Haptics.selectionAsync()
-            toggleFavorite({ league, id, abbr: t.abbr, name: t.displayName })
-          }}
+          onPress={() => toggleFollow({ league, id, abbr: t.abbr, name: t.displayName }, fav)}
         />
       </Stack.Toolbar>
       <Hero colors={[shade(color, 0.6), '#000000']} start={{ x: 0, y: 0 }} end={{ x: 0.35, y: 1 }} watermarks={[{ src: teamLogo(league, t.abbr, 400, id), side: 'right' }]} bottom={24}>
