@@ -43,7 +43,7 @@ Set up on **raygun** (Raspberry Pi, Tailscale IP `100.65.38.4`) on 2026-10-30, n
 
 1. `sidestore-reflect.service` (a ~40-line C port of the Rust reflector) owns a TUN device `sidestore` routed to `10.7.0.1`, swaps source and destination on each packet and sends it back. IP forwarding is on through `/etc/sysctl.d/90-sidestore-reflect.conf`. An SNAT rule rewrites the reflected packets' source to raygun's Tailscale IP; without it the phone's Tailscale drops them (verified with tcpdump: SYNs reflected, never answered).
 2. raygun advertises `10.7.0.1/32` as a Tailscale subnet route with `--snat-subnet-routes=false`, so packets keep the phone's own address. Approve the route in the Tailscale admin console. A route outside Tailscale's 100.64.0.0/10 range is used because Tailscale won't distribute routes inside it, and this keeps raygun's own Tailscale IP free for its other services. This differs from the fork, which gives the reflector its own Tailscale node.
-3. On the phone: Tailscale on (with subnet routes allowed), then SideStore → Settings → **Connection Config** → **Use Local VPN** off (Remote Endpoint mode), **Device IP** `10.7.0.1`, RemotePair Port empty. Health Check → Device Reachability should be green. If it's slow, raise Developer Options → Device (TCP) Probe Timeout to 2000 ms.
+3. On the phone: Tailscale on (with subnet routes allowed), then SideStore → Settings → **Connection Config** → **Use Local VPN** off (Remote Endpoint mode), **Device IP** `10.7.0.1`, RemotePair Port empty. Health Check → Device Reachability should be green (it was, 2026-10-30). If it's slow, raise Developer Options → Device (TCP) Probe Timeout to 2000 ms.
 
 Requirements and limits:
 
