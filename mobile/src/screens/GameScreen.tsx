@@ -8,7 +8,7 @@ import { BoxScore } from '@/components/game/BoxScore'
 import { chartPlays, Plays } from '@/components/game/Plays'
 import { GameInfo, Injuries, LastFive, Leaders, LineScore, OddsCard, periodLabel, Predictor, ScoringSummary, SeasonSeries, TeamStatsCompare } from '@/components/game/sections'
 import { WinChart } from '@/components/game/WinChart'
-import { Card, ErrorState, FavButton, Loading, Logo, Muted, Possession, Segmented, Text, usePullRefresh } from '@/components/ui'
+import { Card, ErrorState, Loading, Logo, Muted, Possession, Segmented, Text, usePullRefresh } from '@/components/ui'
 import { getSummary, hasPossession, LEAGUES, teamLogo, type Game, type LeagueId, type Side } from '@/lib/espn'
 import { dateTime, readable, time } from '@/lib/format'
 import { colors, scoreFont } from '@/theme'
@@ -50,7 +50,7 @@ export default function GameScreen() {
         { value: 'game', label: 'Game' },
         { value: 'box', label: 'Box score' },
         { value: 'plays', label: 'Plays' },
-        { value: 'stats', label: 'Team stats' },
+        { value: 'stats', label: 'Team' },
       ]
     : [{ value: 'game', label: 'Preview' }]
   const plays = chartPlays(raw)
@@ -67,7 +67,8 @@ export default function GameScreen() {
             {game.state === 'in' && game.situation?.lastPlay ? <Situation game={game} /> : null}
             <LineScore game={game} />
             {started && (raw.winprobability?.length > 1 || plays.length > 1) ? (
-              <Card title={raw.winprobability?.length > 1 ? 'Win probability & game flow' : 'Game flow'}>
+              // With win probability, the chart's own Win probability / Game flow switch serves as the title.
+              <Card title={raw.winprobability?.length > 1 ? undefined : 'Game flow'} style={raw.winprobability?.length > 1 ? { paddingTop: 16 } : undefined}>
                 <WinChart winprob={raw.winprobability ?? []} plays={plays} home={game.home} away={game.away} periodLabel={pl} />
               </Card>
             ) : null}
@@ -149,10 +150,7 @@ function HeaderTeam({ side, game }: { side: Side; game: Game }) {
           </Text>
         </Pressable>
       </Link>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Muted style={{ fontSize: 12, color: 'rgba(245,245,245,0.6)' }}>{side.record}</Muted>
-        <FavButton fav={{ league: game.league, id: side.id, abbr: side.abbr, name: side.displayName }} size={13} color="rgba(245,245,245,0.5)" />
-      </View>
+      <Muted style={{ fontSize: 12, color: 'rgba(245,245,245,0.6)', textAlign: 'center' }}>{side.record}</Muted>
     </View>
   )
 }
