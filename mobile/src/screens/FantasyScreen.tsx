@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { router, Stack } from 'expo-router'
 import { useMemo, useState } from 'react'
-import { Pressable, ScrollView, View } from 'react-native'
+import { BlurView } from 'expo-blur'
+import * as Haptics from 'expo-haptics'
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { Avatar, HeadToHead, LineupExtrasProvider, MatchupCard, RosterAuditCredit } from '@/components/fantasy'
 import { useHeaderInset } from '@/components/Hero'
 import { StatTable, type TableRow } from '@/components/StatTable'
 import { STRIP_HEIGHT, Strip, type StripItem } from '@/components/Strip'
-import { Card, Divider, Empty, ErrorState, HeaderMenu, Loading, Muted, Segmented, Tabs, Text, usePullRefresh } from '@/components/ui'
+import { Card, Divider, Empty, ErrorState, HeaderMenu, Loading, Muted, Segmented, Text, usePullRefresh } from '@/components/ui'
 import { getScoreboard } from '@/lib/espn'
 import { setFantasyLeague, setFantasyView, useFantasySelection } from '@/lib/fantasySelection'
 import { useSettings } from '@/lib/settings'
@@ -25,7 +27,6 @@ import {
   usePlayerValues,
   useProjections,
   useRosterGrades,
-  useSlateLines,
 } from '@/lib/useFantasy'
 import type { RosterGrade } from '@/lib/rosteraudit'
 import { colors } from '@/theme'
@@ -79,21 +80,56 @@ export default function FantasyScreen() {
           <HeaderMenu value={league} onChange={setFantasyLeague} options={leagues.map((l) => ({ value: l.id, label: l.name, short: shortLeagueName(l.name) }))} />
         </Stack.Toolbar.View>
       </Stack.Toolbar>
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.View hidesSharedBackground>
-          <Tabs
-            value={view}
-            onChange={setFantasyView}
-            options={[
-              { value: 'matchup', label: 'Matchup' },
-              { value: 'league', label: 'League' },
-              { value: 'standings', label: 'Standings' },
-            ]}
-          />
-        </Stack.Toolbar.View>
-      </Stack.Toolbar>
-      {view === 'standings' ? <StandingsView key={league} id={league} /> : <WeekView key={league} id={league} mine={view === 'matchup'} />}
+      <View style={{ flex: 1 }}>
+        {view === 'standings' ? <StandingsView key={league} id={league} /> : <WeekView key={league} id={league} mine={view === 'matchup'} />}
+        <ViewTabs view={view} />
+      </View>
     </>
+  )
+}
+
+const VIEWS = [
+  { value: 'matchup', label: 'Matchup' },
+  { value: 'league', label: 'League' },
+  { value: 'standings', label: 'Standings' },
+] as const
+const TABS_HEIGHT = 40
+
+/** Full-width page tabs pinned under the header, above the week strip. The strip (or Standings' backdrop) paints the background behind them. */
+function ViewTabs({ view }: { view: (typeof VIEWS)[number]['value'] }) {
+  const top = useHeaderInset()
+  return (
+    <View style={{ position: 'absolute', top, left: 0, right: 0, height: TABS_HEIGHT, flexDirection: 'row', paddingHorizontal: 12, zIndex: 11 }}>
+      {VIEWS.map((o) => {
+        const on = o.value === view
+        return (
+          <Pressable
+            key={o.value}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+            onPress={() => {
+              if (on) return
+              Haptics.selectionAsync()
+              setFantasyView(o.value)
+            }}
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 2, borderBottomColor: on ? colors.fg : 'transparent' }}
+          >
+            <Text style={{ fontSize: 15, fontWeight: on ? '700' : '500', color: on ? colors.fg : colors.muted }}>{o.label}</Text>
+          </Pressable>
+        )
+      })}
+    </View>
+  )
+}
+
+/** Blurred bar behind the header and page tabs, for views without a week strip. */
+function TabsBackdrop() {
+  const top = useHeaderInset()
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: top + TABS_HEIGHT, zIndex: 10, borderBottomWidth: 0.5, borderBottomColor: colors.line }}>
+      <BlurView tint="dark" intensity={40} style={StyleSheet.absoluteFill} />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.85)' }]} />
+    </View>
   )
 }
 
@@ -145,7 +181,7 @@ function WeekView({ id, mine }: { id: string; mine: boolean }) {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView {...scrollProps} refreshControl={refresh} contentContainerStyle={{ paddingHorizontal: 12, paddingTop: STRIP_HEIGHT + 16, paddingBottom: 120, gap: 12 }}>
+      <ScrollView {...scrollProps} refreshControl={refresh} contentContainerStyle={{ paddingHorizontal: 12, paddingTop: TABS_HEIGHT + STRIP_HEIGHT + 16, paddingBottom: 120, gap: 12 }}>
         {(league.isPending || matchups.isPending) && <Loading />}
         {error && <ErrorState error={error} retry={() => (matchups.refetch(), league.refetch(), teams.refetch())} />}
         {league.data && matchups.data && !all.length && <Empty>No matchups for week {week}.</Empty>}
@@ -159,7 +195,7 @@ function WeekView({ id, mine }: { id: string; mine: boolean }) {
           </>
         ))}
       </ScrollView>
-      <Strip items={items} itemWidth={84} selected={String(week)} onSelect={(k) => setPick(Number(k))} top={inset} />
+      <Strip items={items} itemWidth={84} selected={String(week)} onSelect={(k) => setPick(Number(k))} top={inset + TABS_HEIGHT} />
     </View>
   )
 }
@@ -168,12 +204,11 @@ function MyMatchup({ league, pair, teams, proj, team }: { league: FantasyLeague;
   const ids = pair ? [...pair[0].players, ...(pair[1]?.players ?? [])] : []
   const players = useFantasyPlayers(ids, proj.data?.players, !proj.isPending)
   const values = usePlayerValues(league)
-  const slate = useSlateLines()
   const owner = (m?: FantasyMatchup) => (m ? teams?.find((t) => t.rosterId === m.rosterId)?.ownerId : undefined)
   const series = useHeadToHeadHistory(league.id, owner(pair?.[0]), owner(pair?.[1]))
   if (!pair) return <Empty>You don’t have a matchup this week.</Empty>
   return (
-    <LineupExtrasProvider value={{ league: league.id, values: values.data, slate: slate.data }}>
+    <LineupExtrasProvider value={{ league: league.id, values: values.data }}>
       <HeadToHead league={league} a={pair[0]} b={pair[1]} teams={teams} proj={proj.data?.stats} players={players} team={team} series={series.data} />
     </LineupExtrasProvider>
   )
@@ -232,37 +267,40 @@ function StandingsView({ id }: { id: string }) {
     : [{ name: undefined, teams: teams.data ?? [] }]
 
   return (
-    <ScrollView {...scrollProps} refreshControl={refresh} contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 120, gap: 12 }}>
-      {modes.length > 1 && <Segmented value={mode} onChange={setMode} options={modes} />}
-      {mode === 'power' && grades.data && <PowerRankings grades={grades.data} teams={teams.data} userId={userId} />}
-      {mode === 'history' && <LeagueHistory history={history} userId={userId} />}
-      {mode === 'season' && teams.isPending && <Loading />}
-      {mode === 'season' && teams.isError && <ErrorState error={teams.error} retry={teams.refetch} />}
-      {mode === 'season' &&
-        teams.data &&
-        groups.map((g) => {
-          const rows: TableRow[] = [...g.teams].sort(byRecord).map((t, i) => ({
-            key: String(t.rosterId),
-            bold: t.ownerId === userId,
-            left: (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Text tnum style={{ width: 16, textAlign: 'right', fontSize: 12, color: colors.faint }}>{i + 1}</Text>
-                <Avatar src={t.avatar} size={22} />
-                <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: t.ownerId === userId ? '700' : '500', flexShrink: 1 }}>
-                  {t.name}
-                </Text>
-              </View>
-            ),
-            cells: [String(t.wins), String(t.losses), ...(g.teams.some((x) => x.ties) ? [String(t.ties)] : []), t.pointsFor.toFixed(1), t.pointsAgainst.toFixed(1), t.streak ?? ''],
-          }))
-          const headers = ['W', 'L', ...(g.teams.some((x) => x.ties) ? ['T'] : []), 'PF', 'PA', 'STRK']
-          return (
-            <Card key={g.name ?? 'all'} title={g.name}>
-              <StatTable headLeft="Team" headers={headers} rows={rows} leftWidth={170} minCol={44} />
-            </Card>
-          )
-        })}
-    </ScrollView>
+    <View style={{ flex: 1 }}>
+      <ScrollView {...scrollProps} refreshControl={refresh} contentContainerStyle={{ paddingHorizontal: 12, paddingTop: TABS_HEIGHT + 12, paddingBottom: 120, gap: 12 }}>
+        {modes.length > 1 && <Segmented value={mode} onChange={setMode} options={modes} />}
+        {mode === 'power' && grades.data && <PowerRankings grades={grades.data} teams={teams.data} userId={userId} />}
+        {mode === 'history' && <LeagueHistory history={history} userId={userId} />}
+        {mode === 'season' && teams.isPending && <Loading />}
+        {mode === 'season' && teams.isError && <ErrorState error={teams.error} retry={teams.refetch} />}
+        {mode === 'season' &&
+          teams.data &&
+          groups.map((g) => {
+            const rows: TableRow[] = [...g.teams].sort(byRecord).map((t, i) => ({
+              key: String(t.rosterId),
+              bold: t.ownerId === userId,
+              left: (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text tnum style={{ width: 16, textAlign: 'right', fontSize: 12, color: colors.faint }}>{i + 1}</Text>
+                  <Avatar src={t.avatar} size={22} />
+                  <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: t.ownerId === userId ? '700' : '500', flexShrink: 1 }}>
+                    {t.name}
+                  </Text>
+                </View>
+              ),
+              cells: [String(t.wins), String(t.losses), ...(g.teams.some((x) => x.ties) ? [String(t.ties)] : []), t.pointsFor.toFixed(1), t.pointsAgainst.toFixed(1), t.streak ?? ''],
+            }))
+            const headers = ['W', 'L', ...(g.teams.some((x) => x.ties) ? ['T'] : []), 'PF', 'PA', 'STRK']
+            return (
+              <Card key={g.name ?? 'all'} title={g.name}>
+                <StatTable headLeft="Team" headers={headers} rows={rows} leftWidth={170} minCol={44} />
+              </Card>
+            )
+          })}
+      </ScrollView>
+      <TabsBackdrop />
+    </View>
   )
 }
 

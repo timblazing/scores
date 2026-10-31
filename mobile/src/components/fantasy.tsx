@@ -2,11 +2,9 @@ import { Image } from 'expo-image'
 import { Link } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
 import { createContext, useContext } from 'react'
-import { LinearGradient } from 'expo-linear-gradient'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { Card, Divider, Muted, Text } from './ui'
 import type { Game } from '@/lib/espn'
-import { BOOKS, linesFor, statFor, type PlayerLines } from '@/lib/propline'
 import { RA_URL, type HeadToHeadRecord, type PlayerValue } from '@/lib/rosteraudit'
 import { isDefense, record, slotLabel, starterSlots, type FantasyLeague, type FantasyMatchup, type FantasyPlayer, type FantasyTeam } from '@/lib/sleeper'
 import { scoreMatchup, type Slot } from '@/lib/useFantasy'
@@ -58,11 +56,10 @@ function gameInfo(team: string | null | undefined, game?: Game): { text: string;
   return { text: `${opp} ${result} ${us.score}-${them.score}` }
 }
 
-/** Extra data for lineup rows: RosterAudit values and PropLine lines. Either may be missing; rows then show less. */
+/** Extra data for lineup rows: RosterAudit values. May be missing; rows then show less. */
 interface LineupExtras {
   league?: string
   values?: Map<string, PlayerValue>
-  slate?: Map<string, PlayerLines[]>
 }
 const Extras = createContext<LineupExtras>({})
 export const LineupExtrasProvider = Extras.Provider
@@ -70,25 +67,6 @@ export const LineupExtrasProvider = Extras.Provider
 export const BOOK_COLORS: Record<string, string> = { draftkings: '#61b510', underdog: '#f5c518', prizepicks: '#a77bff' }
 /** Week-over-week value moves smaller than this aren't worth an arrow. */
 const TREND_MIN = 150
-
-const gameTeamIds = (g?: Game) => (g ? [g.home.id, g.away.id] : [])
-
-/** "D84.5 U79.5 P80.5": each book's main yardage line, book initial in its color. Books without a line are left out. */
-function BookLines({ lines, align }: { lines: Partial<Record<string, number>>; align: 'left' | 'right' }) {
-  const books = BOOKS.filter((b) => lines[b.key] != null)
-  if (!books.length) return null
-  return (
-    <Text numberOfLines={1} tnum style={{ fontSize: 11, color: colors.muted, textAlign: align }}>
-      {books.map((b, i) => (
-        <Text key={b.key} tnum style={{ fontSize: 11, color: colors.muted }}>
-          {i > 0 ? ' ' : ''}
-          <Text style={{ fontSize: 10, fontWeight: '700', color: BOOK_COLORS[b.key] }}>{b.short[0]}</Text>
-          {lines[b.key]}
-        </Text>
-      ))}
-    </Text>
-  )
-}
 
 const photoUrl = (id: string, p?: FantasyPlayer) =>
   p?.position === 'DEF' || isDefense(id) ? `https://sleepercdn.com/images/team_logos/nfl/${id.toLowerCase()}.png` : `https://sleepercdn.com/content/nfl/players/thumb/${id}.jpg`
@@ -118,9 +96,9 @@ const scored = (slot?: Slot) => (slot && slot.id !== '0' && hasStarted(slot) ? s
 
 const cellStyle = { flex: 1, minHeight: 46, borderRadius: 10, borderCurve: 'continuous' as const, backgroundColor: 'rgba(255,255,255,0.045)', paddingHorizontal: 7, paddingVertical: 6, justifyContent: 'center' as const, gap: 3 }
 
-/** One side of a lineup row: photo, name, the player's game, points over projection, and pregame sportsbook lines. Tapping opens the player. */
+/** One side of a lineup row: photo, name, the player's game, and points over projection. Tapping opens the player. */
 function PlayerCell({ slot, player, align, label, trailing }: { slot?: Slot; player?: FantasyPlayer; align: 'left' | 'right'; label: string; trailing?: boolean }) {
-  const { league, values, slate } = useContext(Extras)
+  const { league, values } = useContext(Extras)
   const right = align === 'right'
   if (!slot || slot.id === '0')
     return (
@@ -131,8 +109,6 @@ function PlayerCell({ slot, player, align, label, trailing }: { slot?: Slot; pla
   const info = gameInfo(player?.team, slot.game)
   const injury = player?.injury ? player.injury.slice(0, 1) === 'Q' ? 'Q' : player.injury.slice(0, 3).toUpperCase() : null
   const trend = values?.get(slot.id)?.trend7d ?? 0
-  const stat = statFor(player?.position)
-  const lines = stat && slot.game?.state === 'pre' ? linesFor(slate, player?.name, gameTeamIds(slot.game))?.yards[stat] : undefined
   const started = hasStarted(slot)
   return (
     <Link href={`/fplayer/${slot.id}?league=${league ?? ''}` as never} asChild>
@@ -157,28 +133,16 @@ function PlayerCell({ slot, player, align, label, trailing }: { slot?: Slot; pla
             <Text tnum style={{ fontSize: 11, color: colors.faint }}>{slot.projection != null ? slot.projection.toFixed(1) : '–'}</Text>
           </View>
         </View>
-        {lines ? <BookLines lines={lines} align={align} /> : null}
       </Pressable>
     </Link>
   )
 }
-/** Legend under the starters: what the lines and arrows mean, and the RosterAudit credit their terms ask for. */
-function LineupLegend({ lines, trends }: { lines: boolean; trends: boolean }) {
-  if (!lines && !trends) return null
+/** Legend under the starters: what the arrows mean, and the RosterAudit credit their terms ask for. */
+function LineupLegend({ trends }: { trends: boolean }) {
+  if (!trends) return null
   return (
-    <View style={{ paddingHorizontal: 16, paddingTop: 2, paddingBottom: 12, gap: 2 }}>
-      {lines ? (
-        <Muted style={{ fontSize: 11, color: colors.faint }}>
-          Lines: pass yds (QB), rush yds (RB), rec yds (WR/TE) at{' '}
-          {BOOKS.map((b, i) => (
-            <Text key={b.key} style={{ fontSize: 11, color: colors.faint }}>
-              {i > 0 ? ', ' : ''}
-              <Text style={{ fontSize: 11, fontWeight: '700', color: BOOK_COLORS[b.key] }}>{b.short[0]}</Text> {b.name}
-            </Text>
-          ))}
-        </Muted>
-      ) : null}
-      {trends ? <RosterAuditCredit prefix="▲▼ dynasty value moved this week. " /> : null}
+    <View style={{ paddingHorizontal: 16, paddingTop: 2, paddingBottom: 12 }}>
+      <RosterAuditCredit prefix="▲▼ dynasty value moved this week. " />
     </View>
   )
 }
@@ -193,13 +157,6 @@ export function RosterAuditCredit({ prefix = '' }: { prefix?: string }) {
     </Muted>
   )
 }
-
-export const hasLineData = (stats: Slot[], players: Map<string, FantasyPlayer>, slate?: Map<string, PlayerLines[]>) =>
-  stats.some((s) => {
-    const p = players.get(s.id)
-    const st = statFor(p?.position)
-    return !!st && s.game?.state === 'pre' && !!linesFor(slate, p?.name, gameTeamIds(s.game))?.yards[st]
-  })
 
 /** Two players in the same slot. The lower score is dimmed once either has points. */
 function LineupRow({ label, a, b, players }: { label: string; a?: Slot; b?: Slot; players: Map<string, FantasyPlayer> }) {
@@ -221,28 +178,6 @@ function LineupRow({ label, a, b, players }: { label: string; a?: Slot; b?: Slot
 const DIM = 'rgba(245,245,245,0.65)'
 const LOST = 'rgba(245,245,245,0.45)'
 
-/**
- * Each side of a matchup tinted with its manager's avatar, like the Sleeper dashboard's team wash:
- * a heavily blurred copy of the avatar fills that half, and a gradient darkens the middle.
- */
-function Wash({ a, b }: { a?: string; b?: string }) {
-  const side = { position: 'absolute' as const, top: -20, bottom: -20, width: '60%' as const, opacity: 0.6 }
-  return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      {a ? <Image source={a} blurRadius={40} contentFit="cover" style={[side, { left: -20 }]} cachePolicy="memory-disk" /> : null}
-      {b ? <Image source={b} blurRadius={40} contentFit="cover" style={[side, { right: -20 }]} cachePolicy="memory-disk" /> : null}
-      <LinearGradient
-        colors={['rgba(0,0,0,0.2)', 'rgba(12,12,12,0.92)', 'rgba(0,0,0,0.2)']}
-        locations={[0, 0.5, 1]}
-        start={{ x: 0, y: 0.5 }}
-        end={{ x: 1, y: 0.5 }}
-        style={StyleSheet.absoluteFill}
-      />
-    </View>
-  )
-}
-
-/** Avatar, team name and record, stacked like the team columns in the game header. */
 function TeamColumn({ team, size, width }: { team?: FantasyTeam; size: number; width: number }) {
   return (
     <View style={{ width, alignItems: 'center', gap: 4 }}>
@@ -310,7 +245,7 @@ interface ScoreboardProps {
   live?: boolean
 }
 
-/** Avatar columns either side of big scores and the status, over the avatar wash, with the win bar under it. `compact` is the league list size. */
+/** Avatar columns either side of big scores and the status, with the win bar under it. `compact` is the league list size. */
 function Scoreboard({ a, b, teamA, teamB, projA, projB, done, live, compact }: ScoreboardProps & { compact?: boolean }) {
   // Once every starter's game is over the result is known: no odds, and the loser's score is dimmed.
   const odds = !done && projA != null && projB != null && b ? winProbability(projA, projB) : undefined
@@ -319,7 +254,6 @@ function Scoreboard({ a, b, teamA, teamB, projA, projB, done, live, compact }: S
   const size = compact ? 26 : 30
   return (
     <View style={{ padding: compact ? 12 : 14, paddingTop: compact ? 14 : 18, gap: compact ? 12 : 16 }}>
-      <Wash a={teamA?.avatar} b={teamB?.avatar} />
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <TeamColumn team={teamA} {...col} />
         <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 2 }}>
@@ -377,7 +311,7 @@ export function HeadToHead({
   /** All-time series from a's side, when RosterAudit has the league's history. */
   series?: HeadToHeadRecord
 }) {
-  const { values, slate } = useContext(Extras)
+  const { values } = useContext(Extras)
   const sa = scoreMatchup(a, league, proj, team, players)
   const sb = b ? scoreMatchup(b, league, proj, team, players) : undefined
   const slots = starterSlots(league)
@@ -385,7 +319,6 @@ export function HeadToHead({
   const benchB = [...(sb?.bench ?? [])].sort((x, y) => posRank(players.get(x.id)) - posRank(players.get(y.id)))
   const benchRows = Math.max(benchA.length, benchB.length)
   const starters = [...sa.starters, ...(sb?.starters ?? [])]
-  const showLines = hasLineData(starters, players, slate)
   const showTrends = starters.some((s) => Math.abs(values?.get(s.id)?.trend7d ?? 0) >= TREND_MIN)
   const teamA = teams?.find((t) => t.rosterId === a.rosterId)
   const teamB = b && teams?.find((t) => t.rosterId === b.rosterId)
@@ -399,7 +332,7 @@ export function HeadToHead({
             <LineupRow key={i} label={slotLabel(slot)} a={sa.starters[i]} b={sb?.starters[i]} players={players} />
           ))}
         </View>
-        <LineupLegend lines={showLines} trends={showTrends} />
+        <LineupLegend trends={showTrends} />
       </Card>
       {benchRows > 0 && (
         <Card title="Bench">
