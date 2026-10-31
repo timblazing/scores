@@ -1,16 +1,13 @@
-// ESPN-style game header: a strip of the day's other games, logos and big scores either side of the clock,
+// ESPN-style game header: logos and big scores either side of the clock,
 // down and distance, and a yard-line strip. A compact copy pins to the top once the full header scrolls away.
-import { useQuery } from '@tanstack/react-query'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Link, router } from 'expo-router'
+import { Link } from 'expo-router'
 import { SymbolView } from 'expo-symbols'
-import * as Haptics from 'expo-haptics'
-import { Animated, Pressable, ScrollView, useWindowDimensions, View } from 'react-native'
+import { Animated, Pressable, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Hero, shade } from '@/components/Hero'
-import { useFavorites } from '@/lib/favorites'
-import { getScoreboard, LEAGUES, teamLogo, type Game, type Side } from '@/lib/espn'
-import { readable, time, ymd } from '@/lib/format'
+import { LEAGUES, teamLogo, type Game, type Side } from '@/lib/espn'
+import { readable, time } from '@/lib/format'
 import { Logo, Text } from '../ui'
 import { colors } from '@/theme'
 import { MiniField } from './Field'
@@ -39,7 +36,7 @@ export function GameHeader({ game, drive }: { game: Game; drive?: LiveDrive }) {
           {game.note ?? LEAGUES[game.league].name}
         </Text>
       </View>
-      <GameStrip game={game} />
+      <View style={{ height: 4 }} />
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingTop: 10 }}>
         <TeamColumn side={game.away} game={game} />
         <BigScore side={game.away} other={game.home} game={game} ball={drive?.team === game.away} align="left" />
@@ -71,7 +68,8 @@ function TeamColumn({ side, game }: { side: Side; game: Game }) {
   )
 }
 
-function BigScore({ side, other, game, ball, align, size = 42 }: { side: Side; other: Side; game: Game; ball?: boolean; align: 'left' | 'right'; size?: number }) {
+/** Big score with the football SF Symbol beside it for the team with the ball. Also used by the Scores list rows. */
+export function BigScore({ side, other, game, ball, align, size = 42 }: { side: Side; other: Side; game: Game; ball?: boolean; align: 'left' | 'right'; size?: number }) {
   if (game.state === 'pre') return <View style={{ width: 8 }} />
   const lost = game.state === 'post' && Number(side.score) < Number(other.score)
   const icon = ball ? <SymbolView name="football.fill" size={size * 0.26} tintColor="#fff" style={{ marginHorizontal: 3 }} /> : <View style={{ width: size * 0.26 + 6 }} />
@@ -156,88 +154,5 @@ export function CompactHeader({ game, drive, opacity, active }: { game: Game; dr
       )}
       <View style={{ height: 0.5, backgroundColor: colors.lineStrong }} />
     </Animated.View>
-  )
-}
-
-/* ---------- other games strip ---------- */
-
-const CHIP_W = 124
-const CUR_W = 96
-const GAP = 8
-
-const stateOrder = { in: 0, pre: 1, post: 2 } as const
-
-/** The day's other games in the same league; tapping one swaps to it. College shows ranked games and your teams. */
-function GameStrip({ game }: { game: Game }) {
-  const day = ymd(new Date(game.date))
-  const { width } = useWindowDimensions()
-  const { isFav } = useFavorites()
-  const q = useQuery({
-    queryKey: ['sb', game.league, 'day', day],
-    queryFn: () => getScoreboard(game.league, { date: day }),
-    refetchInterval: (query) => (query.state.data?.games.some((g) => g.state === 'in') ? 30_000 : false),
-  })
-  const games = (q.data?.games ?? [])
-    .filter((g) => g.id === game.id || game.league !== 'cfb' || g.home.rank || g.away.rank || isFav(g.league, g.home.id) || isFav(g.league, g.away.id))
-    .sort((a, b) => stateOrder[a.state] - stateOrder[b.state] || a.date.localeCompare(b.date))
-  if (games.length < 2) return <View style={{ height: 4 }} />
-  const idx = Math.max(0, games.findIndex((g) => g.id === game.id))
-  const offset = Math.max(0, idx * (CHIP_W + GAP) + 12 - (width - CUR_W) / 2)
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentOffset={{ x: offset, y: 0 }} contentContainerStyle={{ paddingHorizontal: 12, gap: GAP, paddingVertical: 4 }}>
-      {games.map((g) =>
-        g.id === game.id ? (
-          <View key={g.id} style={{ width: CUR_W, height: 46, borderRadius: 12, borderCurve: 'continuous', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.9)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <Logo src={g.away.logo} size={22} />
-            <Text style={{ fontSize: 12, color: DIM }}>@</Text>
-            <Logo src={g.home.logo} size={22} />
-          </View>
-        ) : (
-          <StripChip key={g.id} g={g} />
-        ),
-      )}
-    </ScrollView>
-  )
-}
-
-function StripChip({ g }: { g: Game }) {
-  const [top, bottom] =
-    g.state === 'in'
-      ? [g.clock && g.period ? g.clock : g.shortDetail, g.period ? (g.league === 'nba' && g.period > 4 ? 'OT' : ['1st', '2nd', '3rd', '4th'][g.period - 1] ?? 'OT') : '']
-      : g.state === 'post'
-        ? ['Final', g.shortDetail.replace(/^Final\/?/, '')]
-        : [g.timeTBD ? 'TBD' : time(g.date), '']
-  const half = /half/i.test(g.shortDetail)
-  return (
-    <Pressable
-      onPress={() => {
-        Haptics.selectionAsync()
-        router.replace(`/game/${g.league}/${g.id}`)
-      }}
-      style={({ pressed }) => ({ width: CHIP_W, height: 46, borderRadius: 12, borderCurve: 'continuous', backgroundColor: pressed ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.09)', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, gap: 6 })}
-    >
-      <View style={{ width: 34 }}>
-        <Text numberOfLines={1} style={{ fontSize: 10, fontWeight: '700', color: g.state === 'in' ? colors.fg : DIM }}>
-          {half ? 'Half' : top}
-        </Text>
-        {bottom && !half ? <Text style={{ fontSize: 10, color: DIM }}>{bottom}</Text> : null}
-      </View>
-      <View style={{ flex: 1, gap: 2 }}>
-        {[g.away, g.home].map((s) => (
-          <View key={s.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Logo src={s.logo} size={14} />
-            <Text numberOfLines={1} style={{ flex: 1, fontSize: 11, fontWeight: '600' }}>
-              {s.rank ? <Text style={{ fontSize: 9, color: DIM }}>{s.rank} </Text> : null}
-              {s.abbr}
-            </Text>
-            {g.state !== 'pre' ? (
-              <Text tnum style={{ fontSize: 11, fontWeight: '700', color: g.state === 'post' && Number(s.score) < Number((s === g.away ? g.home : g.away).score) ? DIM : colors.fg }}>
-                {s.score}
-              </Text>
-            ) : null}
-          </View>
-        ))}
-      </View>
-    </Pressable>
   )
 }

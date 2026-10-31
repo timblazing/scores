@@ -4,23 +4,32 @@ Running notes on what's built, why, and what's next. Read this before starting a
 
 ## Slate — what's next
 
-Keep this list current at the end of every session; session notes below are history. Last updated: Session 11, 2026-10-31.
+Keep this list current at the end of every session; session notes below are history. Last updated: Session 12, 2026-10-31.
 
-**State:** `main` has the native Expo app in `mobile/` with tabs Scores (gear → Settings), Fantasy and Search, plus first-launch onboarding. PR #13 (Session 10) added the ESPN-style Gamecast game page, cut Scores to today only (Favorites, Live, today's games by league), and removed the Leagues tab. An IPA from that `main` was built for the owner to install through SideStore; not yet confirmed on the phone. Session 11 added Fantasy data from RosterAudit and PropLine in a PR (`feat/fantasy-data`); typecheck and lint pass, not yet run on a device.
+**State:** `main` has the native Expo app in `mobile/` with tabs Scores (gear → Settings), Fantasy and Search, plus first-launch onboarding. PR #13 (Session 10) added the ESPN-style Gamecast game page, cut Scores to today only (Favorites, Live, today's games by league), and removed the Leagues tab. An IPA from that `main` was built for the owner to install through SideStore; not yet confirmed on the phone. Session 11 added Fantasy data from RosterAudit and PropLine (PR #15). Session 12 (pushed to `main`) restyled the Scores rows and the field's end zones and changed the app icon; its IPA is in iCloud Drive → Dev/ios.
 
 **Simulators need the owner's approval** (`AGENTS.md` → "Simulators"). Verify with typecheck and lint; the owner tests on the phone.
 
 **Up next, in order:**
 
-1. **Owner tests the Session 10 IPA on the phone**: Scores today-only, the title on the settings row, the Gamecast game page during a live game, and Session 9's context menus and haptics.
+1. **Owner tests the Session 12 IPA on the phone** (in iCloud Drive → Dev/ios/Scores.ipa): new end zones on the Gamecast field, the Scores rows laid out like the game header with the possession football, no "Scores" title, no game strip on the game page, and the new scoreboard app icon. Session 10's items (Gamecast during a live game, context menus, haptics) are also still unconfirmed.
 2. **More design refinement.** The owner is focused on design. Ask for notes; offer side-by-side simulator screenshots only if the owner approves a simulator.
 3. **Owner tests the Fantasy data on the phone** (Session 11): book lines and ▲/▼ on a pregame lineup, tapping a player, the all-time series card, Standings → Power (Oiled Down only) and All-time. Lines only show before kickoff, so test before a slate.
 4. **Native features still open:** `@expo/ui` SwiftUI controls. Widgets: not yet (owner).
 5. **Parked.**
    - **Live Activities for favorites' live games.** The owner wants them but won't pay the $99/yr Apple program, and updates while the app is closed need ActivityKit push from your own team. Free alternatives (score alerts through ntfy/Bark or Web Push, in-app-only Live Activity) are in `docs/IOS_SIDELOADING.md` → "Live scores without the $99 program". Pitch one if the owner asks again.
-   - Football possession indicator, in some form other than the left/right arrow.
    - Fantasy's empty-state "Open Settings" button is unverified; the owner says it isn't a priority.
    - Sharing Scores with a friend without SideStore: options researched in `docs/IOS_SIDELOADING.md` → "Sharing Scores with a friend". Future idea, nothing to build yet.
+
+## Session 12 — 2026-10-31 — End zones, header-style score rows, scoreboard icon
+
+- Pushed straight to `main` at the owner's request.
+- Gamecast field (`Field.tsx`): end zones use the team's brighter color (the alternate when the primary is near black, as ESPN does), and the school name (college) or nickname (NFL) in Avenir Next Condensed Heavy, sized to fill the end zone and sheared to follow the perspective. The header's yard strip uses the same colors.
+- Game page header: removed the scrollable strip of the day's other games.
+- Scores rows (`GameRow.tsx`) copy the game header: logo, rank + abbreviation, record, big score with the SF Symbol football for the team with the ball (`BigScore` from `GameHeader.tsx`), clock, down and ball spot (`Situation.spot` from the scoreboard's `possessionText`). No network, no field strip.
+- Scores has no title; only the gear remains on the header row.
+- App icon: MDI `scoreboard` in white on black. `buildNumber` 3.
+- Typecheck and lint pass. Not run on a simulator. IPA (includes Session 11's Fantasy data) built and copied to iCloud Drive → Dev/ios/Scores.ipa.
 
 ## Session 11 — 2026-10-31 — Fantasy data: lines, values, history, power rankings, player page
 

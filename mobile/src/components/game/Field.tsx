@@ -123,8 +123,8 @@ function FieldCanvas({ W, game, drive }: { W: number; game: Game; drive: LiveDri
         {Array.from({ length: 10 }, (_, i) => (
           <Polygon key={i} points={zone(i * 10, i * 10 + 10)} fill={i % 2 ? '#333336' : '#2b2b2e'} />
         ))}
-        <EndZone points={zone(-10, 0)} side={game.away} cx={(px(-5, 0, W) + px(-5, 1, W)) / 2} cy={py(0.5)} rotate={-90} width={px(0, BALL_T, W) - px(-10, BALL_T, W)} />
-        <EndZone points={zone(100, 110)} side={game.home} cx={(px(105, 0, W) + px(105, 1, W)) / 2} cy={py(0.5)} rotate={90} width={px(110, BALL_T, W) - px(100, BALL_T, W)} />
+        <EndZone points={zone(-10, 0)} side={game.away} game={game} x={-5} W={W} rotate={-90} />
+        <EndZone points={zone(100, 110)} side={game.home} game={game} x={105} W={W} rotate={90} />
         <Polygon points={zone(-10, 110)} fill="url(#depth)" />
         {Array.from({ length: 11 }, (_, i) => yardLine(i * 10, `l${i}`, i === 0 || i === 10 ? 0.55 : i === 5 ? 0.32 : 0.16))}
         {/* hash marks */}
@@ -165,13 +165,42 @@ function FieldCanvas({ W, game, drive }: { W: number; game: Game; drive: LiveDri
   )
 }
 
-function EndZone({ points, side, cx, cy, rotate, width }: { points: string; side: Side; cx: number; cy: number; rotate: number; width: number }) {
-  const label = side.name.toUpperCase()
-  const size = Math.min(13, width * 0.55, (FIELD_H - 14) / (label.length * 0.72))
+const lum = (hex: string) => {
+  const n = parseInt(hex.replace('#', ''), 16)
+  return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255
+}
+
+/** ESPN paints the end zone in the team's brighter color: Ole Miss red, not navy. */
+function zoneColor(side: Side) {
+  const ok = (c: string) => /^#[0-9a-f]{6}$/i.test(c) && lum(c) >= 0.1 && lum(c) <= 0.8
+  if (ok(side.color)) return side.color
+  if (ok(side.altColor)) return side.altColor
+  return readable(side.color)
+}
+
+/** A team-colored end zone with the school (college) or nickname (NFL) running along it, sheared to follow the field's perspective. */
+function EndZone({ points, side, game, x, W, rotate }: { points: string; side: Side; game: Game; x: number; W: number; rotate: number }) {
+  const label = ((game.league === 'cfb' && side.location) || side.name).toUpperCase()
+  const top = px(x, 0, W)
+  const bottom = px(x, 1, W)
+  const cx = (top + bottom) / 2
+  const cy = py(0.5)
+  const shear = (Math.atan2(bottom - top, FIELD_H) * 180) / Math.PI
+  const depth = px(x + 5, 0.5, W) - px(x - 5, 0.5, W)
+  const size = Math.min(depth * 0.95, (FIELD_H * 0.86) / (label.length * 0.56))
   return (
     <>
-      <Polygon points={points} fill={readable(side.color)} />
-      <SvgText x={cx} y={cy + size * 0.35} fill="#fff" fontSize={size} fontWeight="800" letterSpacing={1} textAnchor="middle" transform={`rotate(${rotate}, ${cx}, ${cy})`}>
+      <Polygon points={points} fill={zoneColor(side)} />
+      <SvgText
+        x={0}
+        y={size * 0.36}
+        fill="#fff"
+        fontSize={size}
+        fontFamily="AvenirNextCondensed-Heavy"
+        letterSpacing={0.5}
+        textAnchor="middle"
+        transform={`translate(${cx}, ${cy}) skewX(${shear}) rotate(${rotate})`}
+      >
         {label}
       </SvgText>
     </>
@@ -236,8 +265,8 @@ function MiniCanvas({ W, drive, game }: { W: number; drive: LiveDrive; game: Gam
   return (
     <>
       <Svg width={W} height={26}>
-        <Rect x={0} y={base - 6} width={mx(0, W)} height={6} fill={readable(game.away.color)} opacity={0.5} />
-        <Rect x={mx(100, W)} y={base - 6} width={W - mx(100, W)} height={6} fill={readable(game.home.color)} opacity={0.5} />
+        <Rect x={0} y={base - 6} width={mx(0, W)} height={6} fill={zoneColor(game.away)} opacity={0.6} />
+        <Rect x={mx(100, W)} y={base - 6} width={W - mx(100, W)} height={6} fill={zoneColor(game.home)} opacity={0.6} />
         <Line x1={0} x2={W} y1={base} y2={base} stroke="#fff" strokeOpacity={0.35} strokeWidth={1} />
         {Array.from({ length: 21 }, (_, i) => i * 5).map((x) => (
           <Line key={x} x1={mx(x, W)} x2={mx(x, W)} y1={base} y2={base - (x % 10 ? 3 : 6)} stroke="#fff" strokeOpacity={x % 10 ? 0.25 : 0.45} strokeWidth={1} />

@@ -70,6 +70,8 @@ export interface Side {
   abbr: string
   name: string
   displayName: string
+  /** "Ole Miss" for college, "Kansas City" for the NFL. */
+  location?: string
   logo?: string
   color: string
   altColor: string
@@ -109,6 +111,8 @@ export interface Odds {
 
 export interface Situation {
   downDistance?: string
+  /** Ball spot, "AUB 47". */
+  spot?: string
   possessionId?: string
   isRedZone?: boolean
   lastPlay?: string
@@ -191,6 +195,7 @@ function parseSide(c: Any, league: LeagueId): Side {
     abbr: t.abbreviation ?? '',
     name: t.shortDisplayName ?? t.name ?? t.displayName ?? '',
     displayName: t.displayName ?? '',
+    location: t.location,
     logo: teamLogo(league, t.abbreviation, 80, t.id ?? c.id),
     color: t.color ? `#${t.color}` : '#333333',
     altColor: t.alternateColor ? `#${t.alternateColor}` : '#666666',
@@ -239,6 +244,7 @@ export function parseEvent(e: Any, league: LeagueId): Game {
     situation: sit
       ? {
           downDistance: sit.shortDownDistanceText ?? sit.downDistanceText,
+          spot: sit.possessionText,
           possessionId: sit.possession ? String(sit.possession) : undefined,
           isRedZone: sit.isRedZone,
           lastPlay: sit.lastPlay?.text,

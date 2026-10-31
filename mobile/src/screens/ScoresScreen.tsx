@@ -100,13 +100,6 @@ export default function ScoresScreen() {
   return (
     <>
       <Stack.Screen options={{ title: '' }} />
-      <Stack.Toolbar placement="left">
-        <Stack.Toolbar.View hidesSharedBackground>
-          <Text style={{ fontSize: 28, fontWeight: '700' }} accessibilityRole="header">
-            Scores
-          </Text>
-        </Stack.Toolbar.View>
-      </Stack.Toolbar>
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Button icon="gearshape" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
       </Stack.Toolbar>

@@ -3,59 +3,49 @@ import { Pressable, Share, View } from 'react-native'
 import { LEAGUES, type Game, type Side } from '@/lib/espn'
 import { useFavorites } from '@/lib/favorites'
 import { dayLabel, time, ymd } from '@/lib/format'
-import { Divider, Logo, Muted, Text, toggleFollow } from './ui'
-import { card, colors, radius, scoreFont } from '@/theme'
+import { Divider, Logo, Text, toggleFollow } from './ui'
+import { BigScore } from './game/GameHeader'
+import { card, colors, radius } from '@/theme'
 
+const DIM = 'rgba(245,245,245,0.65)'
+
+/** Logo, rank and abbreviation, and record, laid out like the game page header. */
 function Team({ side, game }: { side: Side; game: Game }) {
   const { isFav } = useFavorites()
   return (
-    <View style={{ width: 62, alignItems: 'center', gap: 4 }}>
-      <Logo src={side.logo} size={38} />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-        {side.rank ? <Text tnum style={{ fontSize: 10, color: colors.faint }}>{side.rank}</Text> : null}
-        <Text numberOfLines={1} style={{ fontSize: 13, fontWeight: '600', color: colors.muted }}>
-          {side.abbr}
-        </Text>
-        {isFav(game.league, side.id) ? <Text style={{ fontSize: 9, color: colors.warn }}>★</Text> : null}
-      </View>
-    </View>
-  )
-}
-
-function Score({ side, other, game }: { side: Side; other: Side; game: Game }) {
-  if (game.state === 'pre')
-    return (
-      <Text numberOfLines={1} tnum style={{ width: 56, textAlign: 'center', fontSize: 12, color: colors.faint }}>
-        {side.record}
+    <View style={{ width: 64, alignItems: 'center', gap: 3 }}>
+      <Logo src={side.logo} size={40} />
+      <Text numberOfLines={1} style={{ fontSize: 13, fontWeight: '700' }}>
+        {side.rank ? <Text tnum style={{ fontSize: 11, fontWeight: '500', color: DIM }}>{side.rank} </Text> : null}
+        {side.abbr}
+        {isFav(game.league, side.id) ? <Text style={{ fontSize: 9, color: colors.warn }}> ★</Text> : null}
       </Text>
-    )
-  const lost = game.state === 'post' && (side.winner === false || Number(side.score) < Number(other.score))
-  return (
-    <View style={{ width: 56, alignItems: 'center' }}>
-      <Text tnum style={{ fontFamily: scoreFont, fontSize: 36, lineHeight: 40, color: lost ? colors.faint : colors.fg }}>
-        {side.score ?? '-'}
-      </Text>
+      {side.record ? <Text style={{ fontSize: 11, color: DIM, marginTop: -2 }}>{side.record}</Text> : null}
     </View>
   )
 }
 
 function Status({ game, showDay }: { game: Game; showDay?: boolean }) {
+  const sit = game.situation
   if (game.state === 'in')
     return (
       <>
-        <Text style={{ fontSize: 13, fontWeight: '600', color: colors.live, textAlign: 'center' }}>{game.shortDetail.replace(/ - /, ' · ')}</Text>
-        {game.situation?.downDistance ? <Muted style={{ fontSize: 11, marginTop: 2 }}>{game.situation.downDistance}</Muted> : null}
+        <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '700' }}>
+          {game.shortDetail}
+        </Text>
+        {sit?.downDistance ? <Text style={{ fontSize: 12, color: DIM }}>{sit.downDistance}</Text> : null}
+        {sit?.spot ? <Text style={{ fontSize: 12, color: DIM }}>{sit.spot}</Text> : null}
       </>
     )
-  if (game.state === 'post') return <Text style={{ fontSize: 13, fontWeight: '600', textAlign: 'center' }}>{game.shortDetail}</Text>
+  if (game.state === 'post') return <Text style={{ fontSize: 14, fontWeight: '700', textAlign: 'center' }}>{game.shortDetail}</Text>
   const day = showDay ? dayLabel(ymd(new Date(game.date))) : 'Today'
   return (
     <>
-      {day !== 'Today' ? <Text style={{ fontSize: 11, fontWeight: '600', color: colors.muted, marginBottom: 2 }}>{day}</Text> : null}
-      <Text style={{ fontSize: 14, fontWeight: '600', textAlign: 'center' }}>
+      {day !== 'Today' ? <Text style={{ fontSize: 12, color: DIM }}>{day}</Text> : null}
+      <Text style={{ fontSize: 15, fontWeight: '700', textAlign: 'center' }}>
         {game.timeTBD ? 'TBD' : /postponed|canceled|delayed/i.test(game.detail) ? game.shortDetail : time(game.date)}
       </Text>
-      {game.odds?.details ? <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>{game.odds.details}</Text> : null}
+      {game.odds?.details ? <Text style={{ fontSize: 12, color: DIM }}>{game.odds.details}</Text> : null}
     </>
   )
 }
@@ -67,23 +57,20 @@ function shareGame(game: Game) {
   Share.share({ message: line, url })
 }
 
+const hasBall = (game: Game, side: Side) => game.state === 'in' && game.situation?.possessionId === side.id
+
 export function GameRow({ game, showDay }: { game: Game; showDay?: boolean }) {
   const { isFav } = useFavorites()
   return (
     <Link href={`/game/${game.league}/${game.id}`} asChild>
       <Link.Trigger>
-        <Pressable style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 10, paddingVertical: 12, borderRadius: radius }}>
+        <Pressable style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 8, paddingVertical: 14, borderRadius: radius }}>
           <Team side={game.away} game={game} />
-          <Score side={game.away} other={game.home} game={game} />
-          <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 2 }}>
+          <BigScore side={game.away} other={game.home} game={game} ball={hasBall(game, game.away)} align="left" size={34} />
+          <View style={{ flex: 1, alignItems: 'center', gap: 1, paddingHorizontal: 2 }}>
             <Status game={game} showDay={showDay} />
-            {game.broadcast && game.state === 'pre' ? (
-              <Text numberOfLines={1} style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>
-                {game.broadcast}
-              </Text>
-            ) : null}
           </View>
-          <Score side={game.home} other={game.away} game={game} />
+          <BigScore side={game.home} other={game.away} game={game} ball={hasBall(game, game.home)} align="right" size={34} />
           <Team side={game.home} game={game} />
         </Pressable>
       </Link.Trigger>
