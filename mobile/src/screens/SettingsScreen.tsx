@@ -32,7 +32,7 @@ export default function SettingsScreen() {
     <>
       <Stack.Title>Settings</Stack.Title>
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} keyboardDismissMode="on-drag" contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 60, gap: 24 }}>
-        <Section title="Leagues" footer="Scores and the Leagues tab show only the leagues you follow.">
+        <Section title="Leagues" footer="Scores shows only the leagues you follow.">
           <Rows>
             {LEAGUE_IDS.map((l) => (
               <View key={l} style={rowStyle}>
