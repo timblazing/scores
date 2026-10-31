@@ -1,6 +1,6 @@
 # Fantasy data APIs: RosterAudit and PropLine
 
-Research notes, 2026-10-31. Nothing here is built yet. Every endpoint below was called live against the owner's leagues (Oiled Down = dynasty `1388584098439639040`, Slim Pickens = redraft `1389391504413310976`, user `TimBlazing` / `1028415641872699392`).
+Research notes, 2026-10-31. All five recommendations below were built in Session 11 (`lib/propline.ts`, `lib/rosteraudit.ts`); see `docs/WORKLOG.md`. Every endpoint below was called live against the owner's leagues (Oiled Down = dynasty `1388584098439639040`, Slim Pickens = redraft `1389391504413310976`, user `TimBlazing` / `1028415641872699392`).
 
 Keys already exist locally: `ROSTERAUDIT_API_KEY` in `~/DEV/github/active/sleeper-fantasy-dashboard/.env`, `PROPLINE_API_KEY` in `~/DEV/github/in progress/propline/.env` (that key is now on the **free tier**: 1,000 requests/day, 10 burst / 5 per sec).
 
@@ -66,6 +66,8 @@ Skip or later:
 - **Market-implied projections, EV, trends.** Paid tier only.
 
 ## Architecture notes
+
+As built: the app calls both APIs directly, with the keys bundled from `mobile/.env.local` (fine for a personal sideloaded app). The Worker below is the upgrade path if the keys should stay out of the IPA or the PropLine payload becomes a problem.
 
 - PropLine needs a key and returns big payloads. Don't call it from the phone: put a small Cloudflare Worker (the `scores` Worker already exists) in front that fetches the slate per sport every ~30 min on Sundays and less often otherwise, trims to `{player, team, market, line, overProb}`, and caches in KV. That stays well under 1,000/day and sends the phone a few KB.
 - RosterAudit's keyless endpoints are fine to call straight from the app with a `User-Agent` like `Scores/1.0` and React Query `staleTime` of hours (values snapshot daily). Keyed endpoints should go through the same Worker so the key isn't in the IPA.
