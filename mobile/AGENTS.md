@@ -42,8 +42,10 @@ Docs: https://docs.expo.dev/eas/index.md
 
 ## This project: testing on the simulator
 
+Only with the owner's approval in the current conversation (root `AGENTS.md` → "Simulators"). By default, verify with typecheck and lint and let the owner test on the phone.
+
 - Build and device setup: README → "Testing in the simulator". Use the iPhone 16 Pro on iOS 27 (or the README's fallback if the Device panel doesn't list it); the owner's phone is an iPhone 16 Pro on the latest iOS 27 release.
-- Follow the root [T3 Code Device panel workflow](../AGENTS.md#t3-code-device-panel): `device_list`, `device_open` with host/device IDs, the returned `agent-device` command for launch/input/capture, and `device_screenshot` for inspection. CLI builds and installs are allowed; launch/input/capture must stay in the panel so the owner can watch and interact.
+- In T3 Code, use the Device panel: `device_list`, `device_open` with host/device IDs, the returned `agent-device` command for launch/input/capture, and `device_screenshot` for inspection. CLI builds and installs are allowed; launch/input/capture must stay in the panel so the owner can watch and interact.
 - `agent-device snapshot -i` can lag after typing into the native search bar: it showed the previous query's results while the screen had the new ones. Confirm results with `device_screenshot` before calling something a bug.
 - `@eN` refs go stale when the screen changes. Re-snapshot before each `press`/`fill`; a stale ref once tapped a search result and navigated away.
 - Coordinates are in points (402×874). `device_screenshot` images are 3× pixels, so divide by 3, or by about 2.29 for the 920 px-wide preview.
@@ -52,7 +54,7 @@ Docs: https://docs.expo.dev/eas/index.md
 
 ## This project: design work with the owner
 
-The owner wants to compare design options as simulator screenshots before anything is installed on the phone. For each design question:
+When the owner asks to compare design options as simulator screenshots (ask before booting a simulator):
 
 1. Build each option (a branch, or a temporary toggle in code), install it on the simulator from the README, and take the same screen in each with `agent-device screenshot <abs path> --pixel-density 3`.
 2. Show them side by side in chat (`html_preview` + `html_render` in T3 Code), labeled A / B / C, with a line per option on what differs.

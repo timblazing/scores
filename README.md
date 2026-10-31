@@ -38,6 +38,8 @@ npx expo run:ios              # dev build on the simulator
 
 ### Testing in the simulator
 
+Agents boot a simulator only with the owner's approval (see `AGENTS.md`); the owner normally tests on the phone with the IPA below.
+
 Match the owner's phone: an iPhone 16 Pro on the newest iOS (currently the iOS 27.2 release candidate).
 
 - **Preferred:** "iPhone 16 Pro" on **iOS 27.0**, UDID `0C0222EF-2E18-4D96-A500-32050E170333`. Xcode 27.1's iOS 27.1 runtime only supports the iPhone Duo, so 27.0 is the newest runtime for an iPhone 16 Pro. When Xcode ships a newer runtime that supports it (`xcodebuild -downloadPlatform iOS`), create a fresh one with `xcrun simctl create "iPhone 16 Pro" com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro <runtime id>` and update this UDID.
@@ -52,7 +54,7 @@ xcodebuild -workspace Scores.xcworkspace -scheme Scores -configuration Release -
 # app: mobile/build/sim/Build/Products/Release-iphonesimulator/Scores.app (bundle ID dev.blasingame.scores)
 ```
 
-In T3 Code, use the built-in **Device panel** so the owner can watch and interact: call `device_list`, then `device_open` with the chosen `hostId` and `deviceId`. Use the returned device-bound `agent-device` command to launch and interact, and `device_screenshot` to inspect the screen. Builds and installs may use CLI tools; do not launch, tap or capture through `simctl`/`idb`. Follow [the repository agent instructions](AGENTS.md#t3-code-device-panel) for tool failures and cleanup, and `mobile/AGENTS.md` for agent-device gotchas.
+In T3 Code, use the built-in **Device panel** so the owner can watch and interact: call `device_list`, then `device_open` with the chosen `hostId` and `deviceId`. Use the returned device-bound `agent-device` command to launch and interact, and `device_screenshot` to inspect the screen. Builds and installs may use CLI tools; do not launch, tap or capture through `simctl`/`idb`. See `mobile/AGENTS.md` for agent-device gotchas.
 
 Unsigned IPA for SideStore (same bundle ID as the Capacitor build, so it replaces it):
 
