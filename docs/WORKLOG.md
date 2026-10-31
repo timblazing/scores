@@ -4,7 +4,7 @@ Running notes on what's built, why, and what's next. Read this before starting a
 
 ## Slate — what's next
 
-Keep this list current at the end of every session; session notes below are history. Last updated: Session 12, 2026-10-31.
+Keep this list current at the end of every session; session notes below are history. Last updated: Session 13, 2026-10-31.
 
 **State:** `main` has the native Expo app in `mobile/` with tabs Scores (gear → Settings), Fantasy and Search, plus first-launch onboarding. PR #13 (Session 10) added the ESPN-style Gamecast game page, cut Scores to today only (Favorites, Live, today's games by league), and removed the Leagues tab. An IPA from that `main` was built for the owner to install through SideStore; not yet confirmed on the phone. Session 11 added Fantasy data from RosterAudit and PropLine (PR #15). Session 12 (pushed to `main`) restyled the Scores rows and the field's end zones and changed the app icon; its IPA is in iCloud Drive → Dev/ios.
 
@@ -12,6 +12,7 @@ Keep this list current at the end of every session; session notes below are hist
 
 **Up next, in order:**
 
+0. **Owner reviews the Fantasy redesign** (Session 13, branch `feat/fantasy-design`, PR #16): matchup hero and League cards in the Scores header layout on plain cards with the tug-of-war win bar; lineup rows as side-by-side player cells with photos and colored position badges (sportsbook lines only on the player page now); Matchup / League / Standings as full-width page tabs above the week strip. Checked on the simulator; IPA in iCloud Drive → Dev/ios/Scores.ipa. Standings and the player page aren't restyled yet.
 1. **Owner tests the Session 12 IPA on the phone** (in iCloud Drive → Dev/ios/Scores.ipa): new end zones on the Gamecast field, the Scores rows laid out like the game header with the possession football, no "Scores" title, no game strip on the game page, and the new scoreboard app icon. Session 10's items (Gamecast during a live game, context menus, haptics) are also still unconfirmed.
 2. **More design refinement.** The owner is focused on design. Ask for notes; offer side-by-side simulator screenshots only if the owner approves a simulator.
 3. **Owner tests the Fantasy data on the phone** (Session 11): book lines and ▲/▼ on a pregame lineup, tapping a player, the all-time series card, Standings → Power (Oiled Down only) and All-time. Lines only show before kickoff, so test before a slate.
@@ -20,6 +21,13 @@ Keep this list current at the end of every session; session notes below are hist
    - **Live Activities for favorites' live games.** The owner wants them but won't pay the $99/yr Apple program, and updates while the app is closed need ActivityKit push from your own team. Free alternatives (score alerts through ntfy/Bark or Web Push, in-app-only Live Activity) are in `docs/IOS_SIDELOADING.md` → "Live scores without the $99 program". Pitch one if the owner asks again.
    - Fantasy's empty-state "Open Settings" button is unverified; the owner says it isn't a priority.
    - Sharing Scores with a friend without SideStore: options researched in `docs/IOS_SIDELOADING.md` → "Sharing Scores with a friend". Future idea, nothing to build yet.
+
+## Session 13 — 2026-10-31 — Fantasy design from sleeper-fantasy-dashboard
+
+- The owner asked for the Fantasy tab to follow their sleeper-fantasy-dashboard components and the ESPN layout of the Scores rows.
+- `components/fantasy.tsx`: one `Scoreboard` for the matchup hero and the League list cards: avatar, name and record columns either side of big scores (800 weight, like `BigScore`), projections under the scores, Final / Live and a VS chip in the middle, and the dashboard's tug-of-war win bar (favorite green, underdog red, 50% tick). Each side is tinted by a heavily blurred copy of the manager's avatar (the dashboard samples the avatar's dominant color, which needs a canvas RN doesn't have).
+- Lineup rows: each player is a rounded cell with a Sleeper headshot (team logo for DEF), name and game, points over projection, and book lines under; the slot sits between them as a position badge colored like the dashboard (QB red, RB green, WR blue, TE amber, others outlined). The lower score in a slot dims once either has points.
+- Typecheck and lint pass. Not run on a simulator.
 
 ## Session 12 — 2026-10-31 — End zones, header-style score rows, scoreboard icon
 
