@@ -75,13 +75,26 @@ export interface Side {
   altColor: string
   score?: string
   record?: string
+  /** Conference record, college only. */
+  confRecord?: string
   rank?: number
   winner?: boolean
   linescores: string[]
 }
 
+/** One team's line from one moment (open, close or live). Total is "o55.5" for away, "u55.5" for home. */
+export interface OddsLine {
+  spread?: string
+  spreadOdds?: string
+  total?: string
+  totalOdds?: string
+  ml?: string
+}
+
 export interface Odds {
   provider?: string
+  open?: { away: OddsLine; home: OddsLine }
+  live?: { away: OddsLine; home: OddsLine }
   details?: string
   overUnder?: number
   homeSpread?: string
@@ -128,6 +141,21 @@ const fmtML = (v: unknown) => {
 }
 
 
+function oddsAt(o: Any, when: 'open' | 'live'): { away: OddsLine; home: OddsLine } | undefined {
+  const ps = o.pointSpread
+  const tot = o.total
+  const ml = o.moneyline
+  const side = (s: 'away' | 'home'): OddsLine => ({
+    spread: ps?.[s]?.[when]?.line,
+    spreadOdds: ps?.[s]?.[when]?.odds,
+    total: tot?.[s === 'away' ? 'over' : 'under']?.[when]?.line,
+    totalOdds: tot?.[s === 'away' ? 'over' : 'under']?.[when]?.odds,
+    ml: ml?.[s]?.[when]?.odds,
+  })
+  const r = { away: side('away'), home: side('home') }
+  return r.away.spread || r.away.ml || r.away.total ? r : undefined
+}
+
 export function parseOdds(o: Any): Odds | undefined {
   if (!o) return undefined
   const ps = o.pointSpread
@@ -135,6 +163,8 @@ export function parseOdds(o: Any): Odds | undefined {
   const ml = o.moneyline
   const odds: Odds = {
     provider: o.provider?.name,
+    open: oddsAt(o, 'open'),
+    live: oddsAt(o, 'live'),
     details: o.details,
     overUnder: o.overUnder,
     homeSpread: ps?.home?.close?.line,
@@ -154,6 +184,7 @@ function parseSide(c: Any, league: LeagueId): Side {
   const t = c.team ?? {}
   const rec = Array.isArray(c.records) ? c.records : Array.isArray(c.record) ? c.record : []
   const total = rec.find((r: Any) => r.type === 'total' || r.name === 'overall') ?? rec[0]
+  const conf = rec.find((r: Any) => r.type === 'vsconf')
   const rank = Number(c.curatedRank?.current ?? c.rank ?? 0) // AP/CFP rank; 99 = unranked
   return {
     id: String(t.id ?? c.id),
@@ -165,6 +196,7 @@ function parseSide(c: Any, league: LeagueId): Side {
     altColor: t.alternateColor ? `#${t.alternateColor}` : '#666666',
     score: c.score?.displayValue ?? (typeof c.score === 'string' ? c.score : undefined),
     record: total?.summary ?? total?.displayValue,
+    confRecord: conf?.summary ?? conf?.displayValue,
     rank: rank > 0 && rank <= 25 ? rank : undefined,
     winner: c.winner,
     linescores: (c.linescores ?? []).map((l: Any) => String(l.displayValue ?? l.value ?? '')),

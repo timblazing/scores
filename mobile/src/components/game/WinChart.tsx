@@ -3,8 +3,8 @@ import { View } from 'react-native'
 import Svg, { ClipPath, Defs, Line, Path, Rect } from 'react-native-svg'
 import type { Side } from '@/lib/espn'
 import { readable } from '@/lib/format'
-import { Segmented, Text } from '../ui'
-import { colors, scoreFont } from '@/theme'
+import { Logo, Segmented, Text } from '../ui'
+import { colors } from '@/theme'
 
 export interface ChartPlay {
   id: string
@@ -13,6 +13,7 @@ export interface ChartPlay {
   text: string
   awayScore: number
   homeScore: number
+  downDistance?: string
 }
 
 interface Props {
@@ -36,10 +37,11 @@ export function WinChart({ winprob, plays, home, away, periodLabel }: Props) {
 
   // Series value is the home team's share in [-1, 1]: win prob mapped, or score margin normalized.
   const series = useMemo(() => {
-    if (mode === 'prob') return winprob.map((w) => ({ v: w.homeWinPercentage * 2 - 1, raw: w.homeWinPercentage, play: byId.get(w.playId) }))
+    // Away is plotted above the midline and home below, like ESPN.
+    if (mode === 'prob') return winprob.map((w) => ({ v: 1 - w.homeWinPercentage * 2, raw: w.homeWinPercentage, play: byId.get(w.playId) }))
     const pts = plays.filter((p, i) => i === 0 || p.homeScore !== plays[i - 1].homeScore || p.awayScore !== plays[i - 1].awayScore)
     const max = Math.max(10, ...pts.map((p) => Math.abs(p.homeScore - p.awayScore)))
-    return pts.map((p) => ({ v: (p.homeScore - p.awayScore) / max, raw: p.homeScore - p.awayScore, play: p }))
+    return pts.map((p) => ({ v: (p.awayScore - p.homeScore) / max, raw: p.homeScore - p.awayScore, play: p }))
   }, [mode, winprob, plays, byId])
 
   if (series.length < 2) return null
@@ -92,11 +94,7 @@ export function WinChart({ winprob, plays, home, away, periodLabel }: Props) {
           />
         </View>
       )}
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 }}>
-        <Stat side={away} value={label(cur, 'away')} color={awayC} />
-        <Text style={{ fontSize: 11, color: colors.faint, paddingHorizontal: 8 }}>{cur.play ? `${periodLabel(cur.play.period)} · ${cur.play.clock}` : ''}</Text>
-        <Stat side={home} value={label(cur, 'home')} color={homeC} right />
-      </View>
+      <TeamLine side={away} value={label(cur, 'away')} color={awayC} />
       <View
         onLayout={(e) => setW(e.nativeEvent.layout.width)}
         onStartShouldSetResponder={() => true}
@@ -121,10 +119,10 @@ export function WinChart({ winprob, plays, home, away, periodLabel }: Props) {
               <Line key={m.i} x1={x(m.i)} x2={x(m.i)} y1={0} y2={H} stroke="rgba(255,255,255,0.08)" strokeWidth={1} />
             ))}
             <Line x1={0} x2={W} y1={H / 2} y2={H / 2} stroke="rgba(255,255,255,0.18)" strokeDasharray="4 4" strokeWidth={1} />
-            <Path d={area} fill={homeC} opacity={0.22} clipPath="url(#top)" />
-            <Path d={area} fill={awayC} opacity={0.22} clipPath="url(#bot)" />
-            <Path d={line} fill="none" stroke={homeC} strokeWidth={2} clipPath="url(#top)" />
-            <Path d={line} fill="none" stroke={awayC} strokeWidth={2} clipPath="url(#bot)" />
+            <Path d={area} fill={awayC} opacity={0.22} clipPath="url(#top)" />
+            <Path d={area} fill={homeC} opacity={0.22} clipPath="url(#bot)" />
+            <Path d={line} fill="none" stroke={awayC} strokeWidth={2} clipPath="url(#top)" />
+            <Path d={line} fill="none" stroke={homeC} strokeWidth={2} clipPath="url(#bot)" />
             {hover != null && <Line x1={x(hover)} x2={x(hover)} y1={0} y2={H} stroke="rgba(255,255,255,0.5)" strokeWidth={1} />}
           </Svg>
         )}
@@ -137,30 +135,46 @@ export function WinChart({ winprob, plays, home, away, periodLabel }: Props) {
             </Text>
           ))}
       </View>
-      <View style={{ minHeight: 40, marginTop: 10 }}>
-        {cur.play ? (
-          <Text style={{ fontSize: 13, lineHeight: 18, color: colors.muted }}>
-            <Text tnum style={{ fontSize: 13, fontWeight: '600' }}>
-              {cur.play.awayScore}-{cur.play.homeScore}{'  '}
-            </Text>
-            {cur.play.text}
-          </Text>
-        ) : null}
-      </View>
+      <TeamLine side={home} value={label(cur, 'home')} color={homeC} />
+      {cur.play ? (
+        <View style={{ marginTop: 12, padding: 12, gap: 4, backgroundColor: colors.raised, borderRadius: 14, borderCurve: 'continuous' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 14, fontWeight: '700' }}>{cur.play.downDistance ?? (mode === 'prob' ? 'Win probability' : 'Game flow')}</Text>
+              <Text style={{ fontSize: 12, color: colors.faint }}>
+                {cur.play.clock} - {periodLabel(cur.play.period)}
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              {[
+                { s: away, v: cur.play.awayScore },
+                { s: home, v: cur.play.homeScore },
+              ].map(({ s, v }) => (
+                <View key={s.id} style={{ alignItems: 'center', minWidth: 30 }}>
+                  <Text tnum style={{ fontSize: 15, fontWeight: '800' }}>{v}</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '600', color: colors.faint }}>{s.abbr}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+          <Text style={{ fontSize: 13, lineHeight: 18, color: colors.muted }}>{cur.play.text}</Text>
+        </View>
+      ) : null}
     </View>
   )
 }
 
-function Stat({ side, value, color, right }: { side: Side; value: string; color: string; right?: boolean }) {
+/** "[logo] ARIZ ── 17.1%": the team, its line style, and its value at the scrubbed point. */
+function TeamLine({ side, value, color }: { side: Side; value: string; color: string }) {
   return (
-    <View style={{ alignItems: right ? 'flex-end' : 'flex-start' }}>
-      <Text tnum style={{ fontFamily: scoreFont, fontSize: 30, lineHeight: 32 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 8 }}>
+      <Logo src={side.logo} size={20} />
+      <Text style={{ fontSize: 13, fontWeight: '700' }}>{side.abbr}</Text>
+      <View style={{ width: 16, height: 2, borderRadius: 1, backgroundColor: color }} />
+      <View style={{ flex: 1 }} />
+      <Text tnum style={{ fontSize: 18, fontWeight: '800' }}>
         {value || ' '}
       </Text>
-      <View style={{ flexDirection: right ? 'row-reverse' : 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
-        <View style={{ width: 12, height: 2, borderRadius: 1, backgroundColor: color }} />
-        <Text style={{ fontSize: 12, color: colors.muted }}>{side.abbr}</Text>
-      </View>
     </View>
   )
 }
