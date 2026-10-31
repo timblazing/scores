@@ -12,6 +12,14 @@ export const colors = {
   warn: '#fcba00',
 }
 
+/** Position badge colors, from sleeper-fantasy-dashboard's dark position tokens. */
+export const positions: Record<string, { fg: string; bg: string }> = {
+  QB: { fg: '#f5867c', bg: 'rgba(120,32,38,0.55)' },
+  RB: { fg: '#74d69c', bg: 'rgba(22,84,52,0.55)' },
+  WR: { fg: '#8db6f5', bg: 'rgba(28,58,116,0.55)' },
+  TE: { fg: '#ecc35e', bg: 'rgba(96,72,18,0.55)' },
+}
+
 export const radius = 20
 
 export const scoreFont = 'BarlowCondensed_600SemiBold'

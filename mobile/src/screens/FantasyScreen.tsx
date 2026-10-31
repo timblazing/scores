@@ -154,7 +154,7 @@ function WeekView({ id, mine }: { id: string; mine: boolean }) {
             {all.map(([a, b]) => {
               const sa = scoreMatchup(a, league.data, proj.data?.stats, team, proj.data?.players ?? new Map())
               const sb = b && scoreMatchup(b, league.data, proj.data?.stats, team, proj.data?.players ?? new Map())
-              return <MatchupCard key={a.rosterId} href={`/matchup/${id}/${week}/${a.matchupId ?? `r${a.rosterId}`}`} a={a} b={b} teams={teams.data} projA={sa.projected} projB={sb?.projected} mine={a.rosterId === myRoster} />
+              return <MatchupCard key={a.rosterId} href={`/matchup/${id}/${week}/${a.matchupId ?? `r${a.rosterId}`}`} a={a} b={b} teams={teams.data} sa={sa} sb={sb} mine={a.rosterId === myRoster} />
             })}
           </>
         ))}
