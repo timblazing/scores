@@ -4,21 +4,32 @@ Running notes on what's built, why, and what's next. Read this before starting a
 
 ## Slate — what's next
 
-Keep this list current at the end of every session; session notes below are history. Last updated: Session 9, 2026-10-30.
+Keep this list current at the end of every session; session notes below are history. Last updated: Session 10, 2026-10-31.
 
-**State:** `main` has the native Expo app in `mobile/` with tabs Scores (gear → Settings), Fantasy, Leagues and Search, plus first-launch onboarding (PRs #8, #9). The build from that `main` was sideloaded to the owner's iPhone through SideStore on 2026-10-29. Session 9 added link previews, context menus and more haptics in a PR (not yet checked in the simulator).
+**State:** `main` has the native Expo app in `mobile/` with tabs Scores (gear → Settings), Fantasy and Search, plus first-launch onboarding. PR #13 (Session 10) added the ESPN-style Gamecast game page, cut Scores to today only (Favorites, Live, today's games by league), and removed the Leagues tab. An IPA from that `main` was built for the owner to install through SideStore; not yet confirmed on the phone. Fantasy data work (RosterAudit, PropLine) is in progress on `feat/fantasy-data` in the `scores-fantasy-data` worktree.
+
+**Simulators need the owner's approval** (`AGENTS.md` → "Simulators"). Verify with typecheck and lint; the owner tests on the phone.
 
 **Up next, in order:**
 
-1. **Check Session 9 on the simulator.** Press-and-hold a game row (preview, Follow/Unfollow, Share) and a Search team row; pull-to-refresh and follow haptics. Needs the Mac: this session ran on the Pi with no iOS device host.
-2. **More design refinement.** The owner is focused on design next. Ask for notes, show options as side-by-side simulator screenshots, and let the owner choose (`mobile/AGENTS.md` → "design work with the owner").
-3. **Phone testing.** The owner will test on the phone once the design is settled; don't push for it before then.
+1. **Owner tests the Session 10 IPA on the phone**: Scores today-only, the title on the settings row, the Gamecast game page during a live game, and Session 9's context menus and haptics.
+2. **More design refinement.** The owner is focused on design. Ask for notes; offer side-by-side simulator screenshots only if the owner approves a simulator.
+3. **Fantasy data:** finish `feat/fantasy-data` in its own session.
 4. **Native features still open:** `@expo/ui` SwiftUI controls. Widgets: not yet (owner).
 5. **Parked.**
    - **Live Activities for favorites' live games.** The owner wants them but won't pay the $99/yr Apple program, and updates while the app is closed need ActivityKit push from your own team. Free alternatives (score alerts through ntfy/Bark or Web Push, in-app-only Live Activity) are in `docs/IOS_SIDELOADING.md` → "Live scores without the $99 program". Pitch one if the owner asks again.
    - Football possession indicator, in some form other than the left/right arrow.
    - Fantasy's empty-state "Open Settings" button is unverified; the owner says it isn't a priority.
    - Sharing Scores with a friend without SideStore: options researched in `docs/IOS_SIDELOADING.md` → "Sharing Scores with a friend". Future idea, nothing to build yet.
+
+## Session 10 — 2026-10-31 — Gamecast game page, Scores today-only, no Leagues tab
+
+- PR #13, squash-merged as `f60cfff`, combined two sessions: the ESPN-style Gamecast game page, and the Scores changes.
+- Scores (`ScoresScreen.tsx`): only today's games. Sections are Favorites (renamed from My Teams), Live, then today's games by league with no heading. Yesterday's scoreboard is still fetched so games past midnight stay listed. The title is a header item on the settings row instead of a large title.
+- Leagues tab removed along with `LeaguesScreen`/`LeagueScreen` and the `(leagues)` routes; they're in Git history if the owner brings them back. Search's "My Teams" is "Favorites".
+- Typecheck and lint pass. Not run on a simulator; the owner tests the IPA on the phone.
+- Simulator use now needs the owner's approval, in the global agent instructions and this repo's `AGENTS.md`, `mobile/AGENTS.md` and README. Sessions had been booting one to check every change.
+- Branch cleanup: only `main` and `feat/fantasy-data` remain.
 
 ## Session 9 — 2026-10-30 — Link previews, context menus, haptics, SideStore over Tailscale
 
