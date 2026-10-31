@@ -36,6 +36,10 @@ npx tsc --noEmit && npx expo lint
 npx expo run:ios              # dev build on the simulator
 ```
 
+### API keys (Fantasy data)
+
+The Fantasy tab's sportsbook lines (PropLine) and full player pages (RosterAudit) need free API keys. Copy `mobile/.env.example` to `mobile/.env.local` (ignored by Git) and fill in `EXPO_PUBLIC_PROPLINE_KEY` and `EXPO_PUBLIC_ROSTERAUDIT_KEY`. Expo inlines them into the JS bundle at build time, so rebuild after changing them. Without a key, the features that need it are hidden; values, league history and power rankings work keyless. Details in [docs/FANTASY_DATA_APIS.md](docs/FANTASY_DATA_APIS.md).
+
 ### Testing in the simulator
 
 Agents boot a simulator only with the owner's approval (see `AGENTS.md`); the owner normally tests on the phone with the IPA below.

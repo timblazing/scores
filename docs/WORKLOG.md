@@ -4,9 +4,9 @@ Running notes on what's built, why, and what's next. Read this before starting a
 
 ## Slate — what's next
 
-Keep this list current at the end of every session; session notes below are history. Last updated: Session 10, 2026-10-31.
+Keep this list current at the end of every session; session notes below are history. Last updated: Session 11, 2026-10-31.
 
-**State:** `main` has the native Expo app in `mobile/` with tabs Scores (gear → Settings), Fantasy and Search, plus first-launch onboarding. PR #13 (Session 10) added the ESPN-style Gamecast game page, cut Scores to today only (Favorites, Live, today's games by league), and removed the Leagues tab. An IPA from that `main` was built for the owner to install through SideStore; not yet confirmed on the phone. Fantasy data work (RosterAudit, PropLine) is in progress on `feat/fantasy-data` in the `scores-fantasy-data` worktree.
+**State:** `main` has the native Expo app in `mobile/` with tabs Scores (gear → Settings), Fantasy and Search, plus first-launch onboarding. PR #13 (Session 10) added the ESPN-style Gamecast game page, cut Scores to today only (Favorites, Live, today's games by league), and removed the Leagues tab. An IPA from that `main` was built for the owner to install through SideStore; not yet confirmed on the phone. Session 11 added Fantasy data from RosterAudit and PropLine in a PR (`feat/fantasy-data`); typecheck and lint pass, not yet run on a device.
 
 **Simulators need the owner's approval** (`AGENTS.md` → "Simulators"). Verify with typecheck and lint; the owner tests on the phone.
 
@@ -14,13 +14,24 @@ Keep this list current at the end of every session; session notes below are hist
 
 1. **Owner tests the Session 10 IPA on the phone**: Scores today-only, the title on the settings row, the Gamecast game page during a live game, and Session 9's context menus and haptics.
 2. **More design refinement.** The owner is focused on design. Ask for notes; offer side-by-side simulator screenshots only if the owner approves a simulator.
-3. **Fantasy data:** finish `feat/fantasy-data` in its own session.
+3. **Owner tests the Fantasy data on the phone** (Session 11): book lines and ▲/▼ on a pregame lineup, tapping a player, the all-time series card, Standings → Power (Oiled Down only) and All-time. Lines only show before kickoff, so test before a slate.
 4. **Native features still open:** `@expo/ui` SwiftUI controls. Widgets: not yet (owner).
 5. **Parked.**
    - **Live Activities for favorites' live games.** The owner wants them but won't pay the $99/yr Apple program, and updates while the app is closed need ActivityKit push from your own team. Free alternatives (score alerts through ntfy/Bark or Web Push, in-app-only Live Activity) are in `docs/IOS_SIDELOADING.md` → "Live scores without the $99 program". Pitch one if the owner asks again.
    - Football possession indicator, in some form other than the left/right arrow.
    - Fantasy's empty-state "Open Settings" button is unverified; the owner says it isn't a priority.
    - Sharing Scores with a friend without SideStore: options researched in `docs/IOS_SIDELOADING.md` → "Sharing Scores with a friend". Future idea, nothing to build yet.
+
+## Session 11 — 2026-10-31 — Fantasy data: lines, values, history, power rankings, player page
+
+- Research in `docs/FANTASY_DATA_APIS.md`; the owner asked for all five recommendations, with DraftKings, Underdog and PrizePicks as the only books and no empty states (anything without data is hidden).
+- `lib/propline.ts`: one slate-wide call (`/sports/football_nfl/odds`, three books, pass/rush/rec yards + anytime TD), refetched at most every 30 min. Main line per book: PrizePicks' standard line, otherwise the Over/Under pair priced closest to even. Players match by normalized name plus the game's ESPN team ids (Sleeper's `espn_id` is too sparse). PrizePicks posts no TD prices.
+- `lib/rosteraudit.ts`: values and 7-day trends (superflex or 1QB by league), league history (managers, champions, record book, head-to-head), roster grades (dynasty only; redraft returns "League not synced"), and the keyed player page.
+- Lineup rows: a third line "D84.5 U79.5 P80.5" (book initial in its color) before kickoff, ▲/▼ for value moves of 150+ this week, legend and RosterAudit credit under Starters; tapping a player opens `/fplayer/[id]`. Matchups get an All-time series card when the managers have met.
+- Standings: Season | Power | All-time segments; Power and All-time only appear when RosterAudit has data.
+- Player page (`FantasyPlayerScreen.tsx`): this week's lines by book, dynasty value with trends, badges and a value sparkline, outlook (PPG, floor/median/ceiling finish, breakout/bust %, 5-year values), weekly usage.
+- Keys live in `mobile/.env.local` as `EXPO_PUBLIC_*` and are bundled into the IPA (personal sideloaded app; the repo only has `.env.example`). A Worker proxy would keep them out of the app if that ever matters.
+- Typecheck and lint pass. Not run on the simulator (owner's call); the owner tests on the phone.
 
 ## Session 10 — 2026-10-31 — Gamecast game page, Scores today-only, no Leagues tab
 

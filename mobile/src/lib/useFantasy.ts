@@ -1,6 +1,8 @@
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { getScoreboard, type Game } from './espn'
+import { getSlateLines, PROPLINE_KEY } from './propline'
+import { getChampionships, getHeadToHead, getHistoryManagers, getRaPlayerPage, getRecords, getRosterGrades, getValues, isSuperflex, RA_KEY } from './rosteraudit'
 import { useSettings } from './settings'
 import {
   getFantasyLeague,
@@ -112,3 +114,38 @@ export function scoreMatchup(m: FantasyMatchup, league: FantasyLeague, proj: Map
 }
 
 export const teamFor = (teams: FantasyTeam[] | undefined, rosterId: number) => teams?.find((t) => t.rosterId === rosterId)
+
+/* ---------- RosterAudit and PropLine ---------- */
+
+/** Dynasty values and trends for the league's format, refreshed a few times a day. */
+export function usePlayerValues(league: FantasyLeague | undefined) {
+  const format = league && isSuperflex(league.rosterPositions) ? 'sf' : '1qb'
+  return useQuery({ queryKey: ['ra', 'values', format], queryFn: () => getValues(format), enabled: !!league, staleTime: 6 * 60 * 60_000, retry: 1 })
+}
+
+/** Pregame prop lines for the NFL slate. Off when there's no key. */
+export function useSlateLines() {
+  return useQuery({ queryKey: ['propline', 'slate'], queryFn: getSlateLines, enabled: !!PROPLINE_KEY, staleTime: 30 * 60_000, retry: 1 })
+}
+
+export const useLeagueHistory = (league: string, enabled = true) => ({
+  managers: useQuery({ queryKey: ['ra', 'managers', league], queryFn: () => getHistoryManagers(league), enabled, staleTime: 60 * 60_000, retry: 0 }),
+  titles: useQuery({ queryKey: ['ra', 'titles', league], queryFn: () => getChampionships(league), enabled, staleTime: 60 * 60_000, retry: 0 }),
+  records: useQuery({ queryKey: ['ra', 'records', league], queryFn: () => getRecords(league), enabled, staleTime: 60 * 60_000, retry: 0 }),
+})
+
+export function useRosterGrades(league: string) {
+  const userId = useSettings().sleeper?.userId
+  return useQuery({ queryKey: ['ra', 'grades', league], queryFn: () => getRosterGrades(league, userId!), enabled: !!userId, staleTime: 6 * 60 * 60_000, retry: 0 })
+}
+
+export function useHeadToHeadHistory(league: string, me?: string | null, them?: string | null) {
+  return useQuery({ queryKey: ['ra', 'h2h', league, me, them], queryFn: () => getHeadToHead(league, me!, them!), enabled: !!me && !!them, staleTime: 60 * 60_000, retry: 0 })
+}
+
+/** RosterAudit's full player page (usage, outlook, value history). Off when there's no key. */
+export function useRaPlayerPage(id: string) {
+  return useQuery({ queryKey: ['ra', 'player', id], queryFn: () => getRaPlayerPage(id), enabled: !!RA_KEY, staleTime: 6 * 60 * 60_000, retry: 0 })
+}
+
+export const useFantasyPlayer = (id: string) => useQuery({ queryKey: ['sleeper', 'player', id], queryFn: () => getFantasyPlayer(id), staleTime: 12 * 60 * 60_000 })
