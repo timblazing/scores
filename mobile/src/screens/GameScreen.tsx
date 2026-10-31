@@ -1,17 +1,20 @@
 import { useQuery } from '@tanstack/react-query'
-import { Link, useLocalSearchParams } from 'expo-router'
-import { useState } from 'react'
-import { Pressable, ScrollView, View } from 'react-native'
+import { useLocalSearchParams } from 'expo-router'
+import * as Haptics from 'expo-haptics'
+import { useMemo, useState } from 'react'
+import { Animated, Pressable, ScrollView, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Hero, shade, useHeaderInset } from '@/components/Hero'
+import { useHeaderInset } from '@/components/Hero'
 import { BoxScore } from '@/components/game/BoxScore'
-import { chartPlays, Plays } from '@/components/game/Plays'
-import { GameInfo, Injuries, LastFive, Leaders, LineScore, OddsCard, periodLabel, Predictor, ScoringSummary, SeasonSeries, TeamStatsCompare } from '@/components/game/sections'
+import { CurrentDrive } from '@/components/game/Gamecast'
+import { CompactHeader, GameHeader } from '@/components/game/GameHeader'
+import { chartPlays, PlayByPlayCard, Plays } from '@/components/game/Plays'
+import { isFootball, liveDrive } from '@/components/game/football'
+import { GameInfo, Injuries, LastFive, Leaders, LineScore, OddsCard, periodLabel, Predictor, SeasonSeries, Section, Standings, TeamStatsBars, TeamStatsTable } from '@/components/game/sections'
 import { WinChart } from '@/components/game/WinChart'
-import { Card, ErrorState, Loading, Logo, Muted, Segmented, Text, usePullRefresh } from '@/components/ui'
-import { getSummary, LEAGUES, teamLogo, type Game, type LeagueId, type Side } from '@/lib/espn'
-import { dateTime, readable, time } from '@/lib/format'
-import { colors, scoreFont } from '@/theme'
+import { Card, ErrorState, Loading, Muted, Text, usePullRefresh } from '@/components/ui'
+import { getSummary, type Game, type LeagueId } from '@/lib/espn'
+import { colors } from '@/theme'
 
 type Tab = 'game' | 'box' | 'plays' | 'stats'
 
@@ -27,6 +30,27 @@ export default function GameScreen() {
   const refresh = usePullRefresh(() => q.refetch())
   const headerInset = useHeaderInset()
 
+  // The compact header fades in as the bottom of the full header passes under the nav bar.
+  const [scrollY] = useState(() => new Animated.Value(0))
+  const [headerH, setHeaderH] = useState(0)
+  const [compact, setCompact] = useState(false)
+  const fadeStart = Math.max(1, headerH - headerInset - 40)
+  const opacity = scrollY.interpolate({ inputRange: [fadeStart, fadeStart + 30], outputRange: [0, 1], extrapolate: 'clamp' })
+  const onScroll = useMemo(
+    () =>
+      Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+        useNativeDriver: true,
+        listener: (e: { nativeEvent: { contentOffset: { y: number } } }) => {
+          const on = e.nativeEvent.contentOffset.y > fadeStart + 15
+          setCompact((c) => (c === on ? c : on))
+        },
+      }),
+    [scrollY, fadeStart],
+  )
+
+  const data = q.data
+  const drive = useMemo(() => (data && data.game.state === 'in' && isFootball(data.game) ? liveDrive(data.raw, data.game) : undefined), [data])
+
   const scroll = { contentInsetAdjustmentBehavior: 'never' as const, showsVerticalScrollIndicator: false, refreshControl: refresh }
   const bottom = insets.bottom + 90
 
@@ -36,132 +60,91 @@ export default function GameScreen() {
         <Loading />
       </ScrollView>
     )
-  if (q.isError)
+  if (q.isError || !data)
     return (
       <ScrollView {...scroll} contentContainerStyle={{ paddingTop: headerInset + 12, paddingHorizontal: 12 }}>
         <ErrorState error={q.error} retry={q.refetch} />
       </ScrollView>
     )
 
-  const { game, raw } = q.data
+  const { game, raw } = data
   const started = game.state !== 'pre'
+  const football = isFootball(game)
   const tabs: { value: Tab; label: string }[] = started
     ? [
-        { value: 'game', label: 'Game' },
-        { value: 'box', label: 'Box score' },
-        { value: 'plays', label: 'Plays' },
-        { value: 'stats', label: 'Team' },
+        { value: 'game', label: 'Gamecast' },
+        { value: 'box', label: 'Box Score' },
+        { value: 'plays', label: 'Play-by-Play' },
+        { value: 'stats', label: 'Team Stats' },
       ]
-    : [{ value: 'game', label: 'Preview' }]
+    : [{ value: 'game', label: 'Gamecast' }]
   const plays = chartPlays(raw)
   const pl = (p: number) => periodLabel(league, p)
   const active = started ? tab : 'game'
+  const go = (t: Tab) => {
+    setTab(t)
+    Haptics.selectionAsync()
+  }
+  const hasChart = started && (raw.winprobability?.length > 1 || plays.length > 1)
 
   return (
-    <ScrollView {...scroll} contentContainerStyle={{ paddingBottom: bottom }}>
-      <Header game={game} />
-      <View style={{ padding: 12, gap: 12 }}>
-        <Segmented value={active} onChange={setTab} options={tabs} />
-        {active === 'game' && (
-          <>
-            {game.state === 'in' && game.situation?.lastPlay ? <Situation game={game} /> : null}
-            <LineScore game={game} />
-            {started && (raw.winprobability?.length > 1 || plays.length > 1) ? (
-              // With win probability, the chart's own Win probability / Game flow switch serves as the title.
-              <Card title={raw.winprobability?.length > 1 ? undefined : 'Game flow'} style={raw.winprobability?.length > 1 ? { paddingTop: 16 } : undefined}>
-                <WinChart winprob={raw.winprobability ?? []} plays={plays} home={game.home} away={game.away} periodLabel={pl} />
-              </Card>
-            ) : null}
-            {!started && <Predictor raw={raw} game={game} />}
-            <Leaders raw={raw} game={game} title={started ? 'Game leaders' : 'Season leaders'} />
-            <ScoringSummary raw={raw} game={game} />
-            {started && <TeamStatsCompare raw={raw} game={game} limit={6} />}
-            <OddsCard game={game} />
-            <LastFive raw={raw} game={game} />
-            <SeasonSeries raw={raw} game={game} />
-            <Injuries raw={raw} game={game} />
-            <GameInfo raw={raw} game={game} />
-          </>
-        )}
-        {active === 'box' && <BoxScore raw={raw} game={game} />}
-        {active === 'plays' && <Plays raw={raw} game={game} />}
-        {active === 'stats' && <TeamStatsCompare raw={raw} game={game} />}
-      </View>
-    </ScrollView>
-  )
-}
-
-function Header({ game }: { game: Game }) {
-  const insets = useSafeAreaInsets()
-  const away = readable(game.away.color)
-  const home = readable(game.home.color)
-  return (
-    <Hero
-      colors={[shade(away, 0.6), '#000000', shade(home, 0.6)]}
-      start={{ x: 0, y: 0.15 }}
-      end={{ x: 1, y: 0.85 }}
-      locations={[0, 0.5, 1]}
-      watermarks={[
-        { src: teamLogo(game.league, game.away.abbr, 400, game.away.id), side: 'left' },
-        { src: teamLogo(game.league, game.home.abbr, 400, game.home.id), side: 'right' },
-      ]}
-    >
-      <View pointerEvents="none" style={{ position: 'absolute', top: insets.top, left: 70, right: 70, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-        <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: '500', color: 'rgba(245,245,245,0.7)' }}>
-          {game.note ?? LEAGUES[game.league].name}
-        </Text>
-      </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingTop: 8 }}>
-        <HeaderTeam side={game.away} game={game} />
-        <BigScore side={game.away} other={game.home} game={game} />
-        <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 2, minWidth: 84 }}>
-          {game.state === 'in' ? (
-            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.live, textAlign: 'center' }}>{game.shortDetail.replace(/ - /, ' · ')}</Text>
-          ) : game.state === 'post' ? (
-            <Text style={{ fontSize: 14, fontWeight: '600', textAlign: 'center' }}>{game.shortDetail}</Text>
-          ) : (
+    <View style={{ flex: 1 }}>
+      <Animated.ScrollView {...scroll} onScroll={onScroll} scrollEventThrottle={16} contentContainerStyle={{ paddingBottom: bottom }}>
+        <View onLayout={(e) => setHeaderH(e.nativeEvent.layout.height)}>
+          <GameHeader game={game} drive={drive} />
+        </View>
+        <Tabs tabs={tabs} value={active} onChange={go} />
+        <View style={{ padding: 12, gap: 12 }}>
+          {active === 'game' && (
             <>
-              <Text style={{ fontSize: 17, fontWeight: '600' }}>{game.timeTBD ? 'TBD' : time(game.date)}</Text>
-              <Text style={{ fontSize: 12, color: 'rgba(245,245,245,0.6)', textAlign: 'center' }}>{dateTime(game.date).split(',').slice(0, 2).join(',')}</Text>
+              {drive ? <CurrentDrive raw={raw} game={game} /> : null}
+              {!football && game.state === 'in' && game.situation?.lastPlay ? <Situation game={game} /> : null}
+              <LineScore game={game} />
+              {started && football ? <PlayByPlayCard raw={raw} game={game} onMore={() => go('plays')} /> : null}
+              {!started && <Predictor raw={raw} game={game} />}
+              <Leaders raw={raw} game={game} title={started ? 'Game leaders' : 'Season leaders'} />
+              {started && <TeamStatsBars raw={raw} game={game} onMore={() => go('stats')} />}
+              {hasChart ? (
+                <Section title={raw.winprobability?.length > 1 ? 'Win probability' : 'Game flow'} sub={raw.winprobability?.length > 1 ? 'According to ESPN Analytics' : undefined}>
+                  <View style={{ paddingTop: 12 }}>
+                    <WinChart winprob={raw.winprobability ?? []} plays={plays} home={game.home} away={game.away} periodLabel={pl} />
+                  </View>
+                </Section>
+              ) : null}
+              <OddsCard game={game} />
+              <Standings raw={raw} game={game} />
+              <Injuries raw={raw} game={game} />
+              <LastFive raw={raw} game={game} />
+              <SeasonSeries raw={raw} game={game} />
+              <GameInfo raw={raw} game={game} />
             </>
           )}
-          {game.broadcast ? (
-            <Text numberOfLines={2} style={{ marginTop: 4, fontSize: 11, color: 'rgba(245,245,245,0.6)', textAlign: 'center' }}>
-              {game.broadcast}
-            </Text>
-          ) : null}
+          {active === 'box' && <BoxScore raw={raw} game={game} />}
+          {active === 'plays' && <Plays raw={raw} game={game} />}
+          {active === 'stats' && <TeamStatsTable raw={raw} game={game} />}
         </View>
-        <BigScore side={game.home} other={game.away} game={game} />
-        <HeaderTeam side={game.home} game={game} />
-      </View>
-    </Hero>
-  )
-}
-
-function HeaderTeam({ side, game }: { side: Side; game: Game }) {
-  return (
-    <View style={{ width: 68, alignItems: 'center', gap: 2 }}>
-      <Link href={`/team/${game.league}/${side.id}`} asChild>
-        <Pressable style={{ alignItems: 'center', gap: 6 }}>
-          <Logo src={side.logo} size={56} />
-          <Text style={{ fontSize: 18, fontWeight: '700' }}>
-            {side.rank ? <Text tnum style={{ fontSize: 11, fontWeight: '400', color: 'rgba(245,245,245,0.6)' }}>{side.rank} </Text> : null}
-            {side.abbr}
-          </Text>
-        </Pressable>
-      </Link>
-      <Muted style={{ fontSize: 12, color: 'rgba(245,245,245,0.6)', textAlign: 'center' }}>{side.record}</Muted>
+      </Animated.ScrollView>
+      <CompactHeader game={game} drive={drive} opacity={opacity} active={compact} />
     </View>
   )
 }
 
-function BigScore({ side, other, game }: { side: Side; other: Side; game: Game }) {
-  if (game.state === 'pre') return <View style={{ width: 4 }} />
-  const lost = game.state === 'post' && Number(side.score) < Number(other.score)
+/** ESPN's text tabs: the active one is white with an underline, the rest are dimmed. */
+function Tabs({ tabs, value, onChange }: { tabs: { value: Tab; label: string }[]; value: Tab; onChange: (t: Tab) => void }) {
   return (
-    <Text tnum style={{ fontFamily: scoreFont, fontSize: 52, lineHeight: 56, minWidth: 40, textAlign: 'center', color: lost ? 'rgba(245,245,245,0.45)' : colors.fg }}>
-      {side.score}
-    </Text>
+    <View style={{ borderBottomWidth: 0.5, borderBottomColor: colors.lineStrong }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, gap: 22 }}>
+        {tabs.map((t) => {
+          const on = t.value === value
+          return (
+            <Pressable key={t.value} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => !on && onChange(t.value)} style={{ paddingTop: 14 }}>
+              <Text style={{ fontSize: 15, fontWeight: on ? '700' : '500', color: on ? colors.fg : colors.faint, paddingBottom: 11 }}>{t.label}</Text>
+              <View style={{ height: 3, borderRadius: 1.5, backgroundColor: on ? colors.fg : 'transparent' }} />
+            </Pressable>
+          )
+        })}
+      </ScrollView>
+    </View>
   )
 }
 
@@ -170,12 +153,7 @@ function Situation({ game }: { game: Game }) {
   return (
     <Card>
       <View style={{ paddingHorizontal: 16, paddingVertical: 12, gap: 4 }}>
-        {s.downDistance ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600' }}>{s.downDistance}</Text>
-            {s.isRedZone ? <Text style={{ fontSize: 11, color: colors.live, backgroundColor: 'rgba(255,69,58,0.2)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: 'hidden' }}>Red zone</Text> : null}
-          </View>
-        ) : null}
+        {s.downDistance ? <Text style={{ fontSize: 13, fontWeight: '600' }}>{s.downDistance}</Text> : null}
         <Muted style={{ fontSize: 13 }}>{s.lastPlay}</Muted>
       </View>
     </Card>

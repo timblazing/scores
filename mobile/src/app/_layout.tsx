@@ -41,10 +41,6 @@ export default function RootLayout() {
               <NativeTabs.Trigger.Label>Fantasy</NativeTabs.Trigger.Label>
               <NativeTabs.Trigger.Icon sf="football" />
             </NativeTabs.Trigger>
-            <NativeTabs.Trigger name="(leagues)" disableAutomaticContentInsets>
-              <NativeTabs.Trigger.Label>Leagues</NativeTabs.Trigger.Label>
-              <NativeTabs.Trigger.Icon sf="trophy" />
-            </NativeTabs.Trigger>
             <NativeTabs.Trigger name="(search)" role="search" disableAutomaticContentInsets>
               <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>
             </NativeTabs.Trigger>
