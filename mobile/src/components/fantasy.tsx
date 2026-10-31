@@ -257,8 +257,8 @@ function TeamColumn({ team, size, width }: { team?: FantasyTeam; size: number; w
 
 function BigPoints({ points, proj, lost, size }: { points?: number; proj?: number; lost?: boolean; size: number }) {
   return (
-    <View style={{ alignItems: 'center', flexShrink: 1 }}>
-      <Text tnum numberOfLines={1} adjustsFontSizeToFit style={{ fontSize: size, lineHeight: size * 1.1, fontWeight: '800', letterSpacing: -1, color: lost ? LOST : colors.fg }}>
+    <View style={{ flex: 1, alignItems: 'center' }}>
+      <Text tnum numberOfLines={1} adjustsFontSizeToFit style={{ alignSelf: 'stretch', textAlign: 'center', fontSize: size, lineHeight: size * 1.1, fontWeight: '800', letterSpacing: -1, color: lost ? LOST : colors.fg }}>
         {points == null ? '–' : points.toFixed(1)}
       </Text>
       {proj != null ? <Text tnum style={{ fontSize: 11, color: DIM }}>{proj.toFixed(1)}</Text> : null}
@@ -322,9 +322,13 @@ function Scoreboard({ a, b, teamA, teamB, projA, projB, done, live, compact }: S
       <Wash a={teamA?.avatar} b={teamB?.avatar} />
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <TeamColumn team={teamA} {...col} />
-        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 2 }}>
+        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 2 }}>
           <BigPoints points={a.points} proj={done ? undefined : projA} lost={lost(a.points, b?.points)} size={size} />
-          <Status done={done} live={live} />
+          {/* Absolutely centered so uneven score widths can't push the status off the card's midline. */}
+          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
+            <Status done={done} live={live} />
+          </View>
+          <View style={{ width: 40 }} />
           <BigPoints points={b?.points} proj={done ? undefined : projB} lost={b ? lost(b.points, a.points) : false} size={size} />
         </View>
         {b ? <TeamColumn team={teamB} {...col} /> : <View style={{ width: col.width, alignItems: 'center' }}><Muted style={{ fontSize: 13 }}>Bye</Muted></View>}
