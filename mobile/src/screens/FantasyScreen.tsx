@@ -2,16 +2,32 @@ import { useQuery } from '@tanstack/react-query'
 import { router, Stack } from 'expo-router'
 import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
-import { Avatar, HeadToHead, MatchupCard } from '@/components/fantasy'
+import { Avatar, HeadToHead, LineupExtrasProvider, MatchupCard, RosterAuditCredit } from '@/components/fantasy'
 import { useHeaderInset } from '@/components/Hero'
 import { StatTable, type TableRow } from '@/components/StatTable'
 import { STRIP_HEIGHT, Strip, type StripItem } from '@/components/Strip'
-import { Card, Empty, ErrorState, HeaderMenu, Loading, Tabs, Text, usePullRefresh } from '@/components/ui'
+import { Card, Divider, Empty, ErrorState, HeaderMenu, Loading, Muted, Segmented, Tabs, Text, usePullRefresh } from '@/components/ui'
 import { getScoreboard } from '@/lib/espn'
 import { setFantasyLeague, setFantasyView, useFantasySelection } from '@/lib/fantasySelection'
 import { useSettings } from '@/lib/settings'
 import { shortLeagueName, type FantasyLeague, type FantasyMatchup, type FantasyTeam } from '@/lib/sleeper'
-import { scoreMatchup, useFantasyLeague, useFantasyMatchups, useFantasyPlayers, useMyFantasyLeagues, useFantasyTeams, useNflState, useNflWeekGames, useProjections } from '@/lib/useFantasy'
+import {
+  scoreMatchup,
+  useFantasyLeague,
+  useFantasyMatchups,
+  useFantasyPlayers,
+  useFantasyTeams,
+  useHeadToHeadHistory,
+  useLeagueHistory,
+  useMyFantasyLeagues,
+  useNflState,
+  useNflWeekGames,
+  usePlayerValues,
+  useProjections,
+  useRosterGrades,
+  useSlateLines,
+} from '@/lib/useFantasy'
+import type { RosterGrade } from '@/lib/rosteraudit'
 import { colors } from '@/theme'
 
 const scrollProps = { contentInsetAdjustmentBehavior: 'automatic' as const, showsVerticalScrollIndicator: false }
@@ -151,8 +167,16 @@ function WeekView({ id, mine }: { id: string; mine: boolean }) {
 function MyMatchup({ league, pair, teams, proj, team }: { league: FantasyLeague; pair?: [FantasyMatchup, FantasyMatchup | undefined]; teams?: FantasyTeam[]; proj: ReturnType<typeof useProjections>; team: Parameters<typeof HeadToHead>[0]['team'] }) {
   const ids = pair ? [...pair[0].players, ...(pair[1]?.players ?? [])] : []
   const players = useFantasyPlayers(ids, proj.data?.players, !proj.isPending)
+  const values = usePlayerValues(league)
+  const slate = useSlateLines()
+  const owner = (m?: FantasyMatchup) => (m ? teams?.find((t) => t.rosterId === m.rosterId)?.ownerId : undefined)
+  const series = useHeadToHeadHistory(league.id, owner(pair?.[0]), owner(pair?.[1]))
   if (!pair) return <Empty>You don’t have a matchup this week.</Empty>
-  return <HeadToHead league={league} a={pair[0]} b={pair[1]} teams={teams} proj={proj.data?.stats} players={players} team={team} />
+  return (
+    <LineupExtrasProvider value={{ league: league.id, values: values.data, slate: slate.data }}>
+      <HeadToHead league={league} a={pair[0]} b={pair[1]} teams={teams} proj={proj.data?.stats} players={players} team={team} series={series.data} />
+    </LineupExtrasProvider>
+  )
 }
 
 /** Head-to-head for any matchup in a league, opened from the League list. `matchup` is a matchup id, or `r<rosterId>` for a team without one. */
@@ -185,11 +209,23 @@ export function MatchupDetail({ id, week, matchup }: { id: string; week: number;
 
 const byRecord = (a: FantasyTeam, b: FantasyTeam) => b.wins + b.ties / 2 - (a.wins + a.ties / 2) || b.pointsFor - a.pointsFor
 
+type StandingsMode = 'season' | 'power' | 'history'
+
 function StandingsView({ id }: { id: string }) {
   const userId = useSettings().sleeper?.userId
   const league = useFantasyLeague(id)
   const teams = useFantasyTeams(id)
+  const grades = useRosterGrades(id)
+  const history = useLeagueHistory(id)
+  const [picked, setMode] = useState<StandingsMode>('season')
   const refresh = usePullRefresh(() => Promise.all([teams.refetch(), league.refetch()]))
+  // Power only exists for leagues RosterAudit grades (dynasty); All-time only when it has the league's history.
+  const modes: { value: StandingsMode; label: string }[] = [
+    { value: 'season', label: 'Season' },
+    ...(grades.data?.length ? [{ value: 'power' as const, label: 'Power' }] : []),
+    ...(history.managers.data?.length ? [{ value: 'history' as const, label: 'All-time' }] : []),
+  ]
+  const mode = modes.some((m) => m.value === picked) ? picked : 'season'
   const divisions = league.data?.divisions ?? {}
   const groups = Object.keys(divisions).length
     ? Object.entries(divisions).map(([n, name]) => ({ name, teams: (teams.data ?? []).filter((t) => t.division === Number(n)) }))
@@ -197,9 +233,13 @@ function StandingsView({ id }: { id: string }) {
 
   return (
     <ScrollView {...scrollProps} refreshControl={refresh} contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 120, gap: 12 }}>
-      {teams.isPending && <Loading />}
-      {teams.isError && <ErrorState error={teams.error} retry={teams.refetch} />}
-      {teams.data &&
+      {modes.length > 1 && <Segmented value={mode} onChange={setMode} options={modes} />}
+      {mode === 'power' && grades.data && <PowerRankings grades={grades.data} teams={teams.data} userId={userId} />}
+      {mode === 'history' && <LeagueHistory history={history} userId={userId} />}
+      {mode === 'season' && teams.isPending && <Loading />}
+      {mode === 'season' && teams.isError && <ErrorState error={teams.error} retry={teams.refetch} />}
+      {mode === 'season' &&
+        teams.data &&
         groups.map((g) => {
           const rows: TableRow[] = [...g.teams].sort(byRecord).map((t, i) => ({
             key: String(t.rosterId),
@@ -223,5 +263,118 @@ function StandingsView({ id }: { id: string }) {
           )
         })}
     </ScrollView>
+  )
+}
+
+function TeamName({ name, avatar, rank, mine }: { name: string; avatar?: string; rank: number; mine?: boolean }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <Text tnum style={{ width: 16, textAlign: 'right', fontSize: 12, color: colors.faint }}>{rank}</Text>
+      <Avatar src={avatar} size={22} />
+      <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: mine ? '700' : '500', flexShrink: 1 }}>
+        {name}
+      </Text>
+    </View>
+  )
+}
+
+/** RosterAudit's power rankings: rank by projected strength now, contender and dynasty grades, and each team's weak spot. */
+function PowerRankings({ grades, teams, userId }: { grades: RosterGrade[]; teams?: FantasyTeam[]; userId?: string }) {
+  const sorted = [...grades].sort((a, b) => a.powerRank - b.powerRank)
+  const team = (g: RosterGrade) => teams?.find((t) => t.rosterId === g.rosterId)
+  const rows: TableRow[] = sorted.map((g) => {
+    const t = team(g)
+    return {
+      key: String(g.rosterId),
+      bold: g.ownerId === userId,
+      left: <TeamName name={t?.name ?? 'Team'} avatar={t?.avatar} rank={g.powerRank} mine={g.ownerId === userId} />,
+      cells: [g.contender, g.dynasty, String(g.dynastyRank), g.projectedPpg ? g.projectedPpg.toFixed(1) : '–'],
+    }
+  })
+  const weak = sorted.filter((g) => g.weakness)
+  return (
+    <>
+      <Card title="Power rankings">
+        <StatTable headLeft="Team" headers={['NOW', 'DYN', 'DYN#', 'PPG']} rows={rows} leftWidth={170} minCol={44} />
+        <View style={{ paddingHorizontal: 16, paddingVertical: 12, gap: 2 }}>
+          <Muted style={{ fontSize: 11, color: colors.faint }}>NOW contender grade · DYN dynasty grade · DYN# dynasty rank · PPG projected</Muted>
+          <RosterAuditCredit />
+        </View>
+      </Card>
+      {weak.length > 0 && (
+        <Card title="Weak spots">
+          {weak.map((g, i) => (
+            <View key={g.rosterId}>
+              {i > 0 && <Divider />}
+              <View style={{ paddingHorizontal: 16, paddingVertical: 10, gap: 2 }}>
+                <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: g.ownerId === userId ? '700' : '500' }}>
+                  {team(g)?.name ?? 'Team'}
+                </Text>
+                <Muted style={{ fontSize: 13 }}>{g.weakness}</Muted>
+              </View>
+            </View>
+          ))}
+        </Card>
+      )}
+    </>
+  )
+}
+
+/** Every season the league has played: career records, champions, and the record book. Sections without data are left out. */
+function LeagueHistory({ history, userId }: { history: ReturnType<typeof useLeagueHistory>; userId?: string }) {
+  const managers = [...(history.managers.data ?? [])].sort((a, b) => b.titles - a.titles || b.winPct - a.winPct || b.pointsFor - a.pointsFor)
+  const titles = [...(history.titles.data ?? [])].sort((a, b) => Number(b.season) - Number(a.season))
+  const records = history.records.data ?? []
+  const ties = managers.some((m) => m.ties)
+  const rows: TableRow[] = managers.map((m, i) => ({
+    key: m.userId,
+    bold: m.userId === userId,
+    left: <TeamName name={m.name} avatar={m.avatar} rank={i + 1} mine={m.userId === userId} />,
+    cells: [String(m.wins), String(m.losses), ...(ties ? [String(m.ties)] : []), m.pointsFor.toFixed(0), String(m.playoffs), String(m.titles)],
+  }))
+  return (
+    <>
+      <Card title="All-time">
+        <StatTable headLeft="Manager" headers={['W', 'L', ...(ties ? ['T'] : []), 'PF', 'PO', '🏆']} rows={rows} leftWidth={170} minCol={44} />
+        <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
+          <RosterAuditCredit prefix="PO playoff trips. " />
+        </View>
+      </Card>
+      {titles.length > 0 && (
+        <Card title="Champions">
+          {titles.map((t, i) => (
+            <View key={t.season}>
+              {i > 0 && <Divider />}
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, gap: 12 }}>
+                <Text tnum style={{ fontSize: 14, color: colors.muted, width: 40 }}>{t.season}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '600' }}>{t.champion}</Text>
+                  {t.runnerUp ? <Muted numberOfLines={1} style={{ fontSize: 12 }}>def. {t.runnerUp}</Muted> : null}
+                </View>
+              </View>
+            </View>
+          ))}
+        </Card>
+      )}
+      {records.length > 0 && (
+        <Card title="Record book">
+          {records.map((r, i) => (
+            <View key={r.label}>
+              {i > 0 && <Divider />}
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, gap: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <Muted style={{ fontSize: 12 }}>{r.label}</Muted>
+                  <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '500' }}>
+                    {r.holder}
+                    {r.when ? <Muted style={{ fontSize: 12 }}> · {r.when}</Muted> : null}
+                  </Text>
+                </View>
+                <Text tnum style={{ fontSize: 15, fontWeight: '600' }}>{r.value}</Text>
+              </View>
+            </View>
+          ))}
+        </Card>
+      )}
+    </>
   )
 }

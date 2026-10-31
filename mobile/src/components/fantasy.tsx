@@ -1,8 +1,12 @@
 import { Image } from 'expo-image'
 import { Link } from 'expo-router'
+import * as WebBrowser from 'expo-web-browser'
+import { createContext, useContext } from 'react'
 import { Pressable, View } from 'react-native'
 import { Card, Divider, Muted, Text } from './ui'
 import type { Game } from '@/lib/espn'
+import { BOOKS, linesFor, statFor, type PlayerLines } from '@/lib/propline'
+import { RA_URL, type HeadToHeadRecord, type PlayerValue } from '@/lib/rosteraudit'
 import { fmtPts, record, slotLabel, starterSlots, type FantasyLeague, type FantasyMatchup, type FantasyPlayer, type FantasyTeam } from '@/lib/sleeper'
 import { scoreMatchup, type Slot } from '@/lib/useFantasy'
 import { card, colors, scoreFont } from '@/theme'
@@ -53,25 +57,104 @@ function gameInfo(team: string | null | undefined, game?: Game): { text: string;
   return { text: `${opp} ${result} ${us.score}-${them.score}` }
 }
 
-/** One side of a lineup row: name, and the player's game. */
+/** Extra data for lineup rows: RosterAudit values and PropLine lines. Either may be missing; rows then show less. */
+interface LineupExtras {
+  league?: string
+  values?: Map<string, PlayerValue>
+  slate?: Map<string, PlayerLines[]>
+}
+const Extras = createContext<LineupExtras>({})
+export const LineupExtrasProvider = Extras.Provider
+
+export const BOOK_COLORS: Record<string, string> = { draftkings: '#61b510', underdog: '#f5c518', prizepicks: '#a77bff' }
+/** Week-over-week value moves smaller than this aren't worth an arrow. */
+const TREND_MIN = 150
+
+const gameTeamIds = (g?: Game) => (g ? [g.home.id, g.away.id] : [])
+
+/** "D84.5 U79.5 P80.5": each book's main yardage line, book initial in its color. Books without a line are left out. */
+function BookLines({ lines, align }: { lines: Partial<Record<string, number>>; align: 'left' | 'right' }) {
+  const books = BOOKS.filter((b) => lines[b.key] != null)
+  if (!books.length) return null
+  return (
+    <Text numberOfLines={1} tnum style={{ fontSize: 11, color: colors.muted, textAlign: align }}>
+      {books.map((b, i) => (
+        <Text key={b.key} tnum style={{ fontSize: 11, color: colors.muted }}>
+          {i > 0 ? ' ' : ''}
+          <Text style={{ fontSize: 10, fontWeight: '700', color: BOOK_COLORS[b.key] }}>{b.short[0]}</Text>
+          {lines[b.key]}
+        </Text>
+      ))}
+    </Text>
+  )
+}
+
+/** One side of a lineup row: name, the player's game, and pregame sportsbook lines. Tapping opens the player. */
 function PlayerCell({ slot, player, align, label }: { slot?: Slot; player?: FantasyPlayer; align: 'left' | 'right'; label: string }) {
+  const { league, values, slate } = useContext(Extras)
   const right = align === 'right'
   if (!slot || slot.id === '0') return <Muted style={{ flex: 1, fontSize: 13, color: colors.faint, textAlign: align }}>Empty</Muted>
   const info = gameInfo(player?.team, slot.game)
   const injury = player?.injury ? player.injury.slice(0, 1) === 'Q' ? 'Q' : player.injury.slice(0, 3).toUpperCase() : null
+  const trend = values?.get(slot.id)?.trend7d ?? 0
+  const stat = statFor(player?.position)
+  const lines = stat && slot.game?.state === 'pre' ? linesFor(slate, player?.name, gameTeamIds(slot.game))?.yards[stat] : undefined
   return (
-    <View style={{ flex: 1, alignItems: right ? 'flex-end' : 'flex-start' }}>
-      <Text numberOfLines={1} style={{ fontSize: 13, fontWeight: '600' }}>
-        {shortName(player)}
-        {injury ? <Text style={{ fontSize: 10, color: colors.live }}> {injury}</Text> : null}
-      </Text>
-      <Text numberOfLines={1} style={{ fontSize: 11, color: info.live ? colors.live : colors.faint }}>
-        {/* The slot label already names the position, except in flex and bench slots. */}
-        {[player?.position !== label && player?.position, info.text].filter(Boolean).join(' · ')}
-      </Text>
+    <Link href={`/fplayer/${slot.id}?league=${league ?? ''}` as never} asChild>
+      <Pressable style={{ flex: 1, alignItems: right ? 'flex-end' : 'flex-start' }}>
+        <Text numberOfLines={1} style={{ fontSize: 13, fontWeight: '600' }}>
+          {shortName(player)}
+          {injury ? <Text style={{ fontSize: 10, color: colors.live }}> {injury}</Text> : null}
+          {Math.abs(trend) >= TREND_MIN ? <Text style={{ fontSize: 9, color: trend > 0 ? colors.win : colors.live }}> {trend > 0 ? '▲' : '▼'}</Text> : null}
+        </Text>
+        <Text numberOfLines={1} style={{ fontSize: 11, color: info.live ? colors.live : colors.faint }}>
+          {/* The slot label already names the position, except in flex and bench slots. */}
+          {[player?.position !== label && player?.position, info.text].filter(Boolean).join(' · ')}
+        </Text>
+        {lines ? <BookLines lines={lines} align={align} /> : null}
+      </Pressable>
+    </Link>
+  )
+}
+
+/** Legend under the starters: what the lines and arrows mean, and the RosterAudit credit their terms ask for. */
+function LineupLegend({ lines, trends }: { lines: boolean; trends: boolean }) {
+  if (!lines && !trends) return null
+  return (
+    <View style={{ paddingHorizontal: 16, paddingTop: 2, paddingBottom: 12, gap: 2 }}>
+      {lines ? (
+        <Muted style={{ fontSize: 11, color: colors.faint }}>
+          Lines: pass yds (QB), rush yds (RB), rec yds (WR/TE) at{' '}
+          {BOOKS.map((b, i) => (
+            <Text key={b.key} style={{ fontSize: 11, color: colors.faint }}>
+              {i > 0 ? ', ' : ''}
+              <Text style={{ fontSize: 11, fontWeight: '700', color: BOOK_COLORS[b.key] }}>{b.short[0]}</Text> {b.name}
+            </Text>
+          ))}
+        </Muted>
+      ) : null}
+      {trends ? <RosterAuditCredit prefix="▲▼ dynasty value moved this week. " /> : null}
     </View>
   )
 }
+
+export function RosterAuditCredit({ prefix = '' }: { prefix?: string }) {
+  return (
+    <Muted style={{ fontSize: 11, color: colors.faint }}>
+      {prefix}
+      <Text style={{ fontSize: 11, color: colors.muted }} onPress={() => WebBrowser.openBrowserAsync(RA_URL)}>
+        Values by RosterAudit.com
+      </Text>
+    </Muted>
+  )
+}
+
+export const hasLineData = (stats: Slot[], players: Map<string, FantasyPlayer>, slate?: Map<string, PlayerLines[]>) =>
+  stats.some((s) => {
+    const p = players.get(s.id)
+    const st = statFor(p?.position)
+    return !!st && s.game?.state === 'pre' && !!linesFor(slate, p?.name, gameTeamIds(s.game))?.yards[st]
+  })
 
 function Points({ slot, align }: { slot?: Slot; align: 'left' | 'right' }) {
   const started = slot?.game && slot.game.state !== 'pre'
@@ -168,6 +251,7 @@ export function HeadToHead({
   proj,
   players,
   team,
+  series,
 }: {
   league: FantasyLeague
   a: FantasyMatchup
@@ -176,17 +260,25 @@ export function HeadToHead({
   proj?: Map<string, Record<string, number>>
   players: Map<string, FantasyPlayer>
   team: (abbr: string | null | undefined) => Game | undefined
+  /** All-time series from a's side, when RosterAudit has the league's history. */
+  series?: HeadToHeadRecord
 }) {
+  const { values, slate } = useContext(Extras)
   const sa = scoreMatchup(a, league, proj, team, players)
   const sb = b ? scoreMatchup(b, league, proj, team, players) : undefined
   const slots = starterSlots(league)
   const benchA = [...sa.bench].sort((x, y) => posRank(players.get(x.id)) - posRank(players.get(y.id)))
   const benchB = [...(sb?.bench ?? [])].sort((x, y) => posRank(players.get(x.id)) - posRank(players.get(y.id)))
   const benchRows = Math.max(benchA.length, benchB.length)
+  const starters = [...sa.starters, ...(sb?.starters ?? [])]
+  const showLines = hasLineData(starters, players, slate)
+  const showTrends = starters.some((s) => Math.abs(values?.get(s.id)?.trend7d ?? 0) >= TREND_MIN)
+  const teamA = teams?.find((t) => t.rosterId === a.rosterId)
+  const teamB = b && teams?.find((t) => t.rosterId === b.rosterId)
 
   return (
     <>
-      <MatchupHero a={a} b={b} teamA={teams?.find((t) => t.rosterId === a.rosterId)} teamB={b && teams?.find((t) => t.rosterId === b.rosterId)} projA={sa.projected} projB={sb?.projected} done={sa.done && (sb?.done ?? true)} />
+      <MatchupHero a={a} b={b} teamA={teamA} teamB={teamB} projA={sa.projected} projB={sb?.projected} done={sa.done && (sb?.done ?? true)} />
       <Card title="Starters">
         {slots.map((slot, i) => (
           <View key={i}>
@@ -194,6 +286,7 @@ export function HeadToHead({
             <LineupRow label={slotLabel(slot)} a={sa.starters[i]} b={sb?.starters[i]} players={players} />
           </View>
         ))}
+        <LineupLegend lines={showLines} trends={showTrends} />
       </Card>
       {benchRows > 0 && (
         <Card title="Bench">
@@ -205,7 +298,36 @@ export function HeadToHead({
           ))}
         </Card>
       )}
+      {series && series.games > 0 ? <SeriesCard series={series} teamA={teamA} teamB={teamB} /> : null}
     </>
+  )
+}
+
+/** All-time head-to-head between the two managers, newest meeting first. */
+function SeriesCard({ series, teamA, teamB }: { series: HeadToHeadRecord; teamA?: FantasyTeam; teamB?: FantasyTeam }) {
+  const { wins, losses, draws } = series
+  const score = `${Math.max(wins, losses)}–${Math.min(wins, losses)}${draws ? `–${draws}` : ''}`
+  const summary = wins === losses ? `Tied ${score}` : `${(wins > losses ? teamA : teamB)?.name ?? 'TBD'} leads ${score}`
+  return (
+    <Card title="All-time series" action={<Muted style={{ fontSize: 13, flexShrink: 1, marginLeft: 12 }} numberOfLines={1}>{summary}</Muted>}>
+      {series.meetings.slice(0, 5).map((m, i) => (
+        <View key={i}>
+          <Divider />
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10 }}>
+            <Muted style={{ flex: 1, fontSize: 13 }}>
+              {m.season} {m.label}
+            </Muted>
+            <Text tnum style={{ fontSize: 14, fontWeight: m.won ? '600' : '400', color: m.won ? colors.fg : colors.muted }}>
+              {m.score.toFixed(2)}
+            </Text>
+            <Muted style={{ fontSize: 13, paddingHorizontal: 8 }}>–</Muted>
+            <Text tnum style={{ fontSize: 14, fontWeight: m.won ? '400' : '600', color: m.won ? colors.muted : colors.fg }}>
+              {m.oppScore.toFixed(2)}
+            </Text>
+          </View>
+        </View>
+      ))}
+    </Card>
   )
 }
 

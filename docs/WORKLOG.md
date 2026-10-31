@@ -19,6 +19,7 @@ Keep this list current at the end of every session; session notes below are hist
 5. **Parked.**
    - **Live Activities for favorites' live games.** The owner wants them but won't pay the $99/yr Apple program, and updates while the app is closed need ActivityKit push from your own team. Free alternatives (score alerts through ntfy/Bark or Web Push, in-app-only Live Activity) are in `docs/IOS_SIDELOADING.md` → "Live scores without the $99 program". Pitch one if the owner asks again.
    - Football possession indicator, in some form other than the left/right arrow.
+   - Fantasy data from RosterAudit and PropLine: researched and tested, ranked ideas in `docs/FANTASY_DATA_APIS.md`. Owner hasn't picked any yet.
    - Fantasy's empty-state "Open Settings" button is unverified; the owner says it isn't a priority.
    - Sharing Scores with a friend without SideStore: options researched in `docs/IOS_SIDELOADING.md` → "Sharing Scores with a friend". Future idea, nothing to build yet.
 
