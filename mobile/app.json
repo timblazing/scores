@@ -10,7 +10,7 @@
     "backgroundColor": "#000000",
     "ios": {
       "bundleIdentifier": "dev.blasingame.scores",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "supportsTablet": false,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false

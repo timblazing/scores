@@ -113,7 +113,7 @@ export default function SearchScreen() {
         {!term &&
           (favs.length ? (
             <View>
-              <SectionHeader title="Favorites" />
+              <SectionHeader title="Following" />
               <Card>
                 {favs.map((f, i) => (
                   <View key={f.league + f.id}>
