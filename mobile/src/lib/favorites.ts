@@ -43,3 +43,6 @@ export function useFavorites() {
   const isFav = (league: LeagueId, id: string) => favs.some((x) => x.league === league && x.id === id)
   return { favs, isFav }
 }
+
+/** User-facing terminology is Following; retain the storage/API for saved team compatibility. */
+export const useFollowing = useFavorites

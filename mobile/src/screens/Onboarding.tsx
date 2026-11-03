@@ -54,7 +54,7 @@ function TeamsStep({ leagues }: { leagues: LeagueId[] }) {
   return (
     <View style={{ flex: 1 }}>
       <View style={{ paddingHorizontal: 20 }}>
-        <Heading title="Favorite teams" sub="Their games are pinned to the top of Scores." />
+        <Heading title="Follow teams" sub="Their games appear first on Scores." />
         <TextInput
           value={q}
           onChangeText={setQ}

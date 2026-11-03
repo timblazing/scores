@@ -42,7 +42,7 @@ function Section({ title, teams, favs }: { title: string; teams: TeamLite[]; fav
   )
 }
 
-/** Tap-to-star team lists for the given leagues, favorites first. Render inside a ScrollView with `gap`. */
+/** Tap-to-follow team lists for the given leagues, followed teams first. Render inside a ScrollView with `gap`. */
 export function TeamPicker({ leagues, query }: { leagues: LeagueId[]; query: string }) {
   const { favs } = useFavorites()
   const results = useQueries({ queries: leagues.map((l) => ({ queryKey: ['teams', l], queryFn: () => getTeams(l), staleTime: Infinity })) })
@@ -55,7 +55,7 @@ export function TeamPicker({ leagues, query }: { leagues: LeagueId[]; query: str
     <>
       {results.some((r) => r.isPending) && <Loading />}
       {error && <ErrorState error={error.error} retry={() => results.forEach((r) => r.refetch())} />}
-      {!term && mine.length > 0 && <Section title="Favorites" teams={mine} favs={on} />}
+      {!term && mine.length > 0 && <Section title="Following" teams={mine} favs={on} />}
       {leagues.map((l, i) => {
         const teams = (results[i].data ?? []).filter((t) => !term || matches(t, term))
         return teams.length ? <Section key={l} title={LEAGUE_TITLES[l]} teams={teams} favs={on} /> : null

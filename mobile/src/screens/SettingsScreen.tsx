@@ -44,10 +44,10 @@ export default function SettingsScreen() {
           </Rows>
         </Section>
 
-        <Section title="Favorite teams">
+        <Section title="Following">
           <Link href="/settings/teams" asChild>
             <Pressable style={rowStyle}>
-              <Text style={{ flex: 1, fontSize: 16 }}>Favorite teams</Text>
+              <Text style={{ flex: 1, fontSize: 16 }}>Following</Text>
               <Muted style={{ fontSize: 15 }}>{favs.length}</Muted>
               <SymbolView name="chevron.right" size={13} tintColor={colors.faint} />
             </Pressable>

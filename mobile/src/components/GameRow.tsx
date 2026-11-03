@@ -2,7 +2,7 @@ import { Link } from 'expo-router'
 import { Pressable, Share, View } from 'react-native'
 import { LEAGUES, type Game, type Side } from '@/lib/espn'
 import { useFavorites } from '@/lib/favorites'
-import { dayLabel, time, ymd } from '@/lib/format'
+import { dayLabel, shortDate, time, ymd } from '@/lib/format'
 import { Divider, Logo, Text, toggleFollow } from './ui'
 import { BigScore } from './game/GameHeader'
 import { card, colors, radius } from '@/theme'
@@ -38,7 +38,9 @@ function Status({ game, showDay }: { game: Game; showDay?: boolean }) {
       </>
     )
   if (game.state === 'post') return <Text style={{ fontSize: 14, fontWeight: '700', textAlign: 'center' }}>{game.shortDetail}</Text>
-  const day = showDay ? dayLabel(ymd(new Date(game.date))) : 'Today'
+  const date = ymd(new Date(game.date))
+  const label = dayLabel(date)
+  const day = showDay ? (label === 'Today' || label === 'Tomorrow' ? label : `${label}, ${shortDate(date)}`) : 'Today'
   return (
     <>
       {day !== 'Today' ? <Text style={{ fontSize: 12, color: DIM }}>{day}</Text> : null}
