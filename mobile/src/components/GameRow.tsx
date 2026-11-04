@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link } from 'expo-router'
 import { Pressable, Share, View } from 'react-native'
 import { LEAGUES, type Game, type Side } from '@/lib/espn'
@@ -96,15 +97,17 @@ export function GameRow({ game, showDay }: { game: Game; showDay?: boolean }) {
 }
 
 /** `showDay` labels upcoming games that aren't today with their day. */
-export function GameList({ games, showDay }: { games: Game[]; showDay?: boolean }) {
+export function GameList({ games, showDay, header, footer }: { games: Game[]; showDay?: boolean; header?: ReactNode; footer?: ReactNode }) {
   return (
     <View style={card}>
+      {header}
       {games.map((g, i) => (
         <View key={g.id}>
-          {i > 0 && <Divider />}
+          {i > 0 && <View style={{ marginHorizontal: 16 }}><Divider /></View>}
           <GameRow game={g} showDay={showDay} />
         </View>
       ))}
+      {footer}
     </View>
   )
 }

@@ -32,7 +32,7 @@ export default function RootLayout() {
         <StatusBar style="light" />
         {onboarded ? (
           // Screens set their own inset behavior; detail pages draw under the header with "never".
-          <NativeTabs tintColor={colors.fg}>
+          <NativeTabs tintColor={colors.fg} minimizeBehavior="never">
             <NativeTabs.Trigger name="(scores)" disableAutomaticContentInsets>
               <NativeTabs.Trigger.Label>Scores</NativeTabs.Trigger.Label>
               <NativeTabs.Trigger.Icon sf="sportscourt" />
@@ -41,8 +41,18 @@ export default function RootLayout() {
               <NativeTabs.Trigger.Label>Fantasy</NativeTabs.Trigger.Label>
               <NativeTabs.Trigger.Icon sf="football" />
             </NativeTabs.Trigger>
-            <NativeTabs.Trigger name="(search)" role="search" disableAutomaticContentInsets>
+            <NativeTabs.Trigger name="(picks)" disableAutomaticContentInsets>
+              <NativeTabs.Trigger.Label>Picks</NativeTabs.Trigger.Label>
+              <NativeTabs.Trigger.Icon sf="checkmark.seal" />
+            </NativeTabs.Trigger>
+            {/* A regular Search tab keeps all five destinations on one glass surface. */}
+            <NativeTabs.Trigger name="(search)" disableAutomaticContentInsets>
               <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>
+              <NativeTabs.Trigger.Icon sf="magnifyingglass" />
+            </NativeTabs.Trigger>
+            <NativeTabs.Trigger name="(settings)" disableAutomaticContentInsets>
+              <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
+              <NativeTabs.Trigger.Icon sf="gearshape" />
             </NativeTabs.Trigger>
           </NativeTabs>
         ) : (
