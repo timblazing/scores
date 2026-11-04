@@ -11,6 +11,7 @@ Keep this list current at the end of every session; session notes below are hist
 
 **Up next, in order:**
 
+0. **Owner reviews the Fantasy redesign** (Session 13b, PR #16, merged after Session 13): matchup hero and League cards in the Scores header layout on plain cards with the tug-of-war win bar; lineup rows as side-by-side player cells with photos and colored position badges (sportsbook lines only on the player page now); Matchup / League / Standings as full-width page tabs above the week strip. Not in the Session 13 IPA; needs a new build from `main`. Standings and the player page aren't restyled yet.
 1. **Owner tests the Session 13 IPA on the phone** (iCloud Drive → Dev/ios/Scores-2026-11-03.ipa): Following first, next game between slates, league ordering and live rows, updated follow wording. Check prior Gamecast, context menus, haptics, end zones and score row refinements as well; these still need phone confirmation.
 2. **More design refinement.** The owner is focused on design. Ask for notes; offer side-by-side simulator screenshots only if the owner approves a simulator.
 3. **Owner tests the Fantasy data on the phone** (Session 11): book lines and ▲/▼ on a pregame lineup, tapping a player, the all-time series card, Standings → Power (Oiled Down only) and All-time. Lines only show before kickoff, so test before a slate.
@@ -28,6 +29,14 @@ Keep this list current at the end of every session; session notes below are hist
 - ESPN range scoreboard requests returned HTTP 400 during verification; use daily calls instead, polling future dates every five minutes and live dates every 15 seconds.
 - Verification: native typecheck, Expo lint, six feed regression scenarios. No simulator used; visual/physical acceptance is pending with owner.
 - Release: iOS build 4; unsigned Release archive, clean single-app Payload ZIP for SideStore, dated IPA in iCloud Drive → Dev/ios. Owner requested commit/push/merge to main.
+
+## Session 13b — 2026-10-31 — Fantasy design from sleeper-fantasy-dashboard
+
+- The owner asked for the Fantasy tab to follow their sleeper-fantasy-dashboard components and the ESPN layout of the Scores rows.
+- `components/fantasy.tsx`: one `Scoreboard` for the matchup hero and the League list cards: avatar, name and record columns either side of big scores (800 weight, like `BigScore`), projections under the scores, Final / Live and a VS chip in the middle, and the dashboard's tug-of-war win bar (favorite green, underdog red, 50% tick). Each side is tinted by a heavily blurred copy of the manager's avatar (the dashboard samples the avatar's dominant color, which needs a canvas RN doesn't have).
+- Lineup rows: each player is a rounded cell with a Sleeper headshot (team logo for DEF), name and game, points over projection, and book lines under; the slot sits between them as a position badge colored like the dashboard (QB red, RB green, WR blue, TE amber, others outlined). The lower score in a slot dims once either has points.
+- Typecheck and lint pass. Not run on a simulator.
+- Merged after Session 13 (PR #16); the WORKLOG conflict was resolved by keeping both entries.
 
 ## Session 12 — 2026-10-31 — End zones, header-style score rows, scoreboard icon
 
