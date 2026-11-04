@@ -9,7 +9,7 @@ export default function SettingsTeamsScreen() {
   const [q, setQ] = useState('')
   return (
     <>
-      <Stack.Title>Favorite Teams</Stack.Title>
+      <Stack.Title>Following</Stack.Title>
       <Stack.SearchBar placement="automatic" placeholder="Search teams" autoCapitalize="none" onChangeText={(e) => setQ(e.nativeEvent.text)} />
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 60, gap: 12 }}>
         <TeamPicker leagues={leagues} query={q} />
