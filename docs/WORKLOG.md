@@ -4,15 +4,15 @@ Running notes on what's built, why, and what's next. Read this before starting a
 
 ## Slate — what's next
 
-Keep this list current at the end of every session; session notes below are history. Last updated: Session 14, 2026-11-03.
+Keep this list current at the end of every session; session notes below are history. Last updated: Session 15, 2026-11-03.
 
-**State:** Session 14 adds in-card section headings, three-game previews with See more / See less, inset game dividers, and a single native glass bar ordered Scores, Fantasy, Picks, Search, Settings. Picks has a coming-soon skeleton; Settings is now its own tab and Scores has no top toolbar. These changes need a new IPA and owner phone acceptance. The native Expo app now uses Following throughout onboarding, Settings and Search. Scores always starts with Following: live/today games plus each followed team's next scheduled matchup when it is not playing. League sections follow, ordered by live activity and next start, with live games first within each league; there is no separate Live section or "No games today" message. Session 13 builds iOS build 4 as a dated SideStore IPA in iCloud Drive → Dev/ios/Scores-2026-11-03.ipa. Phone acceptance remains with the owner.
+**State:** Session 14 adds in-card section headings, three-game previews with See more / See less, inset game dividers, and a single native glass bar ordered Scores, Fantasy, Picks, Search, Settings. Picks has a coming-soon skeleton; Settings is now its own tab and Scores has no top toolbar. Session 15 built them, with the Fantasy redesign, into iCloud Drive → Dev/ios/Scores-2026-11-03-pr18.ipa (also copied over Dev/ios/Scores.ipa); owner phone acceptance is pending. The native Expo app now uses Following throughout onboarding, Settings and Search. Scores always starts with Following: live/today games plus each followed team's next scheduled matchup when it is not playing. League sections follow, ordered by live activity and next start, with live games first within each league; there is no separate Live section or "No games today" message. Session 13 builds iOS build 4 as a dated SideStore IPA in iCloud Drive → Dev/ios/Scores-2026-11-03.ipa. Phone acceptance remains with the owner.
 **Simulators need the owner's approval** (`AGENTS.md` → "Simulators"). Verify with typecheck and lint; the owner tests on the phone.
 
 **Up next, in order:**
 
-0. **Owner reviews the Fantasy redesign** (Session 13b, PR #16, merged after Session 13): matchup hero and League cards in the Scores header layout on plain cards with the tug-of-war win bar; lineup rows as side-by-side player cells with photos and colored position badges (sportsbook lines only on the player page now); Matchup / League / Standings as full-width page tabs above the week strip. Not in the Session 13 IPA; needs a new build from `main`. Standings and the player page aren't restyled yet.
-1. **Build a new IPA and test Session 14 on the phone:** verify all five tabs share one glass bar with labels, Settings and Following navigation, the higher Scores content, card expansion/collapse and inset dividers. No Session 14 IPA has been built yet. **Earlier Session 13 IPA** (iCloud Drive → Dev/ios/Scores-2026-11-03.ipa): Following first, next game between slates, league ordering and live rows, updated follow wording. Check prior Gamecast, context menus, haptics, end zones and score row refinements as well; these still need phone confirmation.
+0. **Owner reviews the Fantasy redesign** (Session 13b, PR #16, merged after Session 13): matchup hero and League cards in the Scores header layout on plain cards with the tug-of-war win bar; lineup rows as side-by-side player cells with photos and colored position badges (sportsbook lines only on the player page now); Matchup / League / Standings as full-width page tabs above the week strip. Included in the Session 15 IPA (Dev/ios/Scores-2026-11-03-pr18.ipa). Standings and the player page aren't restyled yet.
+1. **Install Dev/ios/Scores-2026-11-03-pr18.ipa via SideStore and test Session 14 on the phone:** verify all five tabs share one glass bar with labels, Settings and Following navigation, the higher Scores content, card expansion/collapse and inset dividers.  **Earlier Session 13 IPA** (iCloud Drive → Dev/ios/Scores-2026-11-03.ipa): Following first, next game between slates, league ordering and live rows, updated follow wording. Check prior Gamecast, context menus, haptics, end zones and score row refinements as well; these still need phone confirmation.
 2. **More design refinement.** The owner is focused on design. Ask for notes; offer side-by-side simulator screenshots only if the owner approves a simulator.
 3. **Owner tests the Fantasy data on the phone** (Session 11): book lines and ▲/▼ on a pregame lineup, tapping a player, the all-time series card, Standings → Power (Oiled Down only) and All-time. Lines only show before kickoff, so test before a slate.
 4. **Native features still open:** `@expo/ui` SwiftUI controls. Widgets: not yet (owner).
@@ -20,6 +20,11 @@ Keep this list current at the end of every session; session notes below are hist
    - **Live Activities for followed teams' live games.** The owner wants them but won't pay the $99/yr Apple program, and updates while the app is closed need ActivityKit push from your own team. Free alternatives (score alerts through ntfy/Bark or Web Push, in-app-only Live Activity) are in `docs/IOS_SIDELOADING.md` → "Live scores without the $99 program". Pitch one if the owner asks again.
    - Fantasy's empty-state "Open Settings" button is unverified; the owner says it isn't a priority.
    - Sharing Scores with a friend without SideStore: options researched in `docs/IOS_SIDELOADING.md` → "Sharing Scores with a friend". Future idea, nothing to build yet.
+
+## Session 15 — 2026-11-03 — IPA from main
+
+- Built an unsigned Release IPA from `main` at e825c0a (PR #16 Fantasy redesign, PR #18 score cards and glass navigation) and put it in iCloud Drive → Dev/ios/Scores-2026-11-03-pr18.ipa and Dev/ios/Scores.ipa.
+- Removed the merged `t3/scores-cards-glass-navbar` worktree and branch. No open PRs or unmerged branches remain.
 
 ## Session 14 — 2026-11-03 — Score cards and unified navigation
 
