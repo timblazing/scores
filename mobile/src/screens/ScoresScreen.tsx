@@ -1,8 +1,8 @@
 import { useQueries, useQueryClient } from '@tanstack/react-query'
-import { router, Stack } from 'expo-router'
+import { Stack } from 'expo-router'
 import * as Haptics from 'expo-haptics'
-import { useEffect, useRef } from 'react'
-import { ScrollView, View } from 'react-native'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Pressable, ScrollView, View } from 'react-native'
 import { GameList } from '@/components/GameRow'
 import { Empty, ErrorState, Loading, Text, usePullRefresh } from '@/components/ui'
 import { getScoreboard, getTeamSchedule, LEAGUES, type Game, type Scoreboard } from '@/lib/espn'
@@ -11,12 +11,33 @@ import { buildScoresFeed } from '@/lib/scoresFeed'
 import { addDays, todayYmd, ymd } from '@/lib/format'
 import { useSettings } from '@/lib/settings'
 
-function Group({ title, games }: { title?: string; games: Game[] }) {
+const INITIAL_GAMES = 3
+
+function Group({ title, games, children }: { title: string; games: Game[]; children?: ReactNode }) {
+  const [expanded, setExpanded] = useState(false)
+  const canExpand = games.length > INITIAL_GAMES
   return (
-    <View>
-      {title ? <Text style={{ fontSize: 17, fontWeight: '600', marginBottom: 8, marginLeft: 4 }}>{title}</Text> : null}
-      <GameList games={games} showDay />
-    </View>
+    <GameList
+      games={expanded ? games : games.slice(0, INITIAL_GAMES)}
+      showDay
+      header={
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 16, paddingRight: 8, minHeight: 52 }}>
+          <Text accessibilityRole="header" style={{ flex: 1, fontSize: 17, fontWeight: '600' }}>{title}</Text>
+          {canExpand && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${expanded ? 'See less' : 'See more'} ${title} games`}
+              accessibilityState={{ expanded }}
+              onPress={() => setExpanded((value) => !value)}
+              style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 12, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}
+            >
+              <Text style={{ fontSize: 14, fontWeight: '500' }}>{expanded ? 'See less' : 'See more'}</Text>
+            </Pressable>
+          )}
+        </View>
+      }
+      footer={children}
+    />
   )
 }
 
@@ -79,19 +100,14 @@ export default function ScoresScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: '' }} />
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button icon="gearshape" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
-      </Stack.Toolbar>
+      <Stack.Screen options={{ headerShown: false }} />
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} refreshControl={refresh} contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 120, gap: 20 }}>
-        <View>
-          <Text style={{ fontSize: 17, fontWeight: '600', marginBottom: 8, marginLeft: 4 }}>Following</Text>
-          {following.length > 0 && <GameList games={following} showDay />}
+        <Group title="Following" games={following}>
           {!favs.length && <Empty>Follow teams in Settings to see their next games here.</Empty>}
           {favs.length > 0 && followingPending && <Loading />}
           {favs.length > 0 && followingError && <ErrorState error={followingError.error} retry={() => queries.forEach((r) => r.refetch())} />}
           {!followingPending && !followingError && unscheduled.length > 0 && <Empty>{unscheduled.map((f) => f.name).join(', ')} · Awaiting the next scheduled game.</Empty>}
-        </View>
+        </Group>
         {results.some((r) => r.isPending) && <Loading />}
         {failed && <ErrorState error={failed.error} retry={() => results.forEach((r) => r.refetch())} />}
         {groups.map((group) => <Group key={group.league} title={LEAGUES[group.league].name} games={group.games} />)}

@@ -26,7 +26,7 @@ Config lives in `cloudflare.config.ts`: the ESPN cache Worker runs only for `/ap
 
 ## iOS app: Expo (`mobile/`)
 
-Expo SDK 58, Expo Router native tabs (Scores, Fantasy, Leagues, search), SwiftUI controls from `@expo/ui`. Scores is one page of today's and upcoming games for the leagues you follow, with Settings behind the gear button; the first launch shows onboarding (leagues, teams to follow, Sleeper username). `mobile/ios/` is generated (Continuous Native Generation) and ignored by Git; configure native settings in `mobile/app.json`.
+Expo SDK 58, Expo Router native tabs (Scores, Fantasy, Picks, Search, Settings), SwiftUI controls from `@expo/ui`. Scores is one page of today's and upcoming games for the leagues you follow. Section titles sit inside the cards; each card starts with three games and expands with See more / See less. All five labeled tabs share one native Liquid Glass bar, and Picks is a coming-soon placeholder; the first launch shows onboarding (leagues, teams to follow, Sleeper username). `mobile/ios/` is generated (Continuous Native Generation) and ignored by Git; configure native settings in `mobile/app.json`.
 
 ```sh
 cd mobile
