@@ -6,20 +6,18 @@ import { useFavorites } from '@/lib/favorites'
 import { dayLabel, shortDate, time, ymd } from '@/lib/format'
 import { Divider, Logo, Text, toggleFollow } from './ui'
 import { BigScore } from './game/GameHeader'
-import { card, colors, radius } from '@/theme'
+import { card, radius } from '@/theme'
 
 const DIM = 'rgba(245,245,245,0.65)'
 
 /** Logo, rank and abbreviation, and record, laid out like the game page header. */
-function Team({ side, game }: { side: Side; game: Game }) {
-  const { isFav } = useFavorites()
+function Team({ side }: { side: Side }) {
   return (
     <View style={{ width: 64, alignItems: 'center', gap: 3 }}>
       <Logo src={side.logo} size={40} />
       <Text numberOfLines={1} style={{ fontSize: 13, fontWeight: '700' }}>
         {side.rank ? <Text tnum style={{ fontSize: 11, fontWeight: '500', color: DIM }}>{side.rank} </Text> : null}
         {side.abbr}
-        {isFav(game.league, side.id) ? <Text style={{ fontSize: 9, color: colors.warn }}> ★</Text> : null}
       </Text>
       {side.record ? <Text style={{ fontSize: 11, color: DIM, marginTop: -2 }}>{side.record}</Text> : null}
     </View>
@@ -68,13 +66,13 @@ export function GameRow({ game, showDay }: { game: Game; showDay?: boolean }) {
     <Link href={`/game/${game.league}/${game.id}`} asChild>
       <Link.Trigger>
         <Pressable style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 8, paddingVertical: 14, borderRadius: radius }}>
-          <Team side={game.away} game={game} />
+          <Team side={game.away} />
           <BigScore side={game.away} other={game.home} game={game} ball={hasBall(game, game.away)} align="left" size={34} />
           <View style={{ flex: 1, alignItems: 'center', gap: 1, paddingHorizontal: 2 }}>
             <Status game={game} showDay={showDay} />
           </View>
           <BigScore side={game.home} other={game.away} game={game} ball={hasBall(game, game.home)} align="right" size={34} />
-          <Team side={game.home} game={game} />
+          <Team side={game.home} />
         </Pressable>
       </Link.Trigger>
       <Link.Preview />
