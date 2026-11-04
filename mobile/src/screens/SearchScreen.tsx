@@ -1,6 +1,6 @@
 import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
-import { Link, Stack } from 'expo-router'
-import { useEffect, useState } from 'react'
+import { Link, Stack, useFocusEffect, useNavigation } from 'expo-router'
+import { useCallback, useEffect, useRef, useState, type ElementRef } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
 import { TeamItem } from '@/components/TeamItem'
 import { Card, Divider, Empty, Headshot, Loading, Muted, Text, usePullRefresh } from '@/components/ui'
@@ -66,6 +66,18 @@ function useDebounced<T>(value: T, ms: number) {
 
 export default function SearchScreen() {
   const [q, setQ] = useState('')
+  const navigation = useNavigation()
+  const searchBar = useRef<ElementRef<typeof Stack.SearchBar>>(null)
+  const openedDetail = useRef(false)
+  // Focus the search bar each time the tab is selected, but not when returning from a detail page.
+  useFocusEffect(
+    useCallback(() => {
+      if (!openedDetail.current) searchBar.current?.focus()
+      return () => {
+        openedDetail.current = navigation.getState().routes.length > 1
+      }
+    }, [navigation]),
+  )
   const { favs } = useFavorites()
   const recents = useRecents()
   const term = q.trim().toLowerCase()
@@ -94,8 +106,8 @@ export default function SearchScreen() {
 
   return (
     <>
-      <Stack.Title>Search</Stack.Title>
-      <Stack.SearchBar placement="automatic" placeholder="Teams and players" autoCapitalize="none" onChangeText={(e) => setQ(e.nativeEvent.text)} />
+      <Stack.Screen options={{ title: '' }} />
+      <Stack.SearchBar ref={searchBar} placement="automatic" placeholder="Teams and players" autoCapitalize="none" onChangeText={(e) => setQ(e.nativeEvent.text)} />
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} keyboardDismissMode="on-drag" refreshControl={refresh} contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 120, gap: 20 }}>
         {!term && recents.length > 0 && (
           <View>
