@@ -1,4 +1,4 @@
-import { Link, Stack } from 'expo-router'
+import { Link } from 'expo-router'
 import { SymbolView } from 'expo-symbols'
 import { useState, type ReactNode } from 'react'
 import { Pressable, ScrollView, Switch, View } from 'react-native'
@@ -30,7 +30,6 @@ export default function SettingsScreen() {
 
   return (
     <>
-      <Stack.Title>Settings</Stack.Title>
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} keyboardDismissMode="on-drag" contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 60, gap: 24 }}>
         <Section title="Leagues" footer="Scores shows only the leagues you follow.">
           <Rows>

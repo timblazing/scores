@@ -1,4 +1,3 @@
-import { Stack } from 'expo-router'
 import { ScrollView, View } from 'react-native'
 import { Card, Muted, Text } from '@/components/ui'
 import { colors } from '@/theme'
@@ -6,7 +5,6 @@ import { colors } from '@/theme'
 export default function PicksScreen() {
   return (
     <>
-      <Stack.Title>Picks</Stack.Title>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 12, paddingBottom: 120 }}>
         <Card style={{ padding: 20, gap: 12 }}>
           <Text accessibilityRole="header" style={{ fontSize: 20, fontWeight: '600' }}>Coming soon</Text>
