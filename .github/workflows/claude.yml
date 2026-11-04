@@ -20,14 +20,19 @@ jobs:
         (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
         (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
       )
-    runs-on: ${{ vars.CLAUDE_RUNNER || 'anton-jit' }}
+    runs-on: ${{ vars.CLAUDE_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 60
     env:
+      CLAUDE_CODE_SUBAGENT_MODEL: sonnet
+      ENABLE_TOOL_SEARCH: 'true'
+      BASH_MAX_OUTPUT_LENGTH: '30000'
+      CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: '75'
+      CLAUDE_CODE_DISABLE_AUTO_MEMORY: '1'
       # Optional. proj sets this secret when anton has the key; without it Claude runs without Composio.
       COMPOSIO_CONSUMER_API_KEY: ${{ secrets.COMPOSIO_CONSUMER_API_KEY }}
       # Inline JSON, not a file: claude-code-action drops --mcp-config file paths. Claude Code expands the
       # ${VAR} header itself, so the key never appears in the arguments.
       COMPOSIO_ARGS: >-
-        --mcp-config '{"mcpServers":{"composio":{"type":"http","url":"https://connect.composio.dev/mcp","headers":{"x-consumer-api-key":"${COMPOSIO_CONSUMER_API_KEY}"}}}}'
         --allowedTools mcp__composio
         --append-system-prompt "The composio MCP server reaches external apps such as Gmail, Slack, Notion or Linear. Find a tool with COMPOSIO_SEARCH_TOOLS, then run it with COMPOSIO_MULTI_EXECUTE_TOOL. Read freely; write to an external app (send, post, create, delete) only when the task asks for that write."
     permissions:
@@ -39,7 +44,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       # Links the skills into ~/.claude/skills and ~/.agents/skills. Pulls instead of cloning when
       # HOME already has them (a persistent self-hosted runner; anton-jit jobs get a fresh HOME).
@@ -52,7 +57,25 @@ jobs:
       - name: Enable corepack
         run: corepack enable || true
 
+      # Tailnet-only MCP: probe from this runner, never add an unreachable server.
+      - name: Configure available MCP servers
+        id: proj
+        shell: bash
+        run: |
+          config='{"mcpServers":{}}'
+          if [ -n "$COMPOSIO_CONSUMER_API_KEY" ]; then
+            config=$(printf '%s' "$config" | jq -c '.mcpServers.composio = {type:"http",url:"https://connect.composio.dev/mcp",headers:{"x-consumer-api-key":"${COMPOSIO_CONSUMER_API_KEY}"}}')
+          fi
+          if curl --fail --silent --max-time 5 https://proj.blasingame.dev/api/health >/dev/null; then
+            config=$(printf '%s' "$config" | jq -c '.mcpServers.proj = {type:"http",url:"https://proj.blasingame.dev/api/mcp"}')
+          fi
+          printf "args=--mcp-config '%s'\n" "$config" >> "$GITHUB_OUTPUT"
+
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          claude_args: ${{ env.COMPOSIO_CONSUMER_API_KEY != '' && env.COMPOSIO_ARGS || '' }}
+          claude_args: >-
+            --model claude-opus-5-5 --effort medium
+            --permission-mode bypassPermissions
+            ${{ env.COMPOSIO_CONSUMER_API_KEY != '' && env.COMPOSIO_ARGS || '' }}
+            ${{ steps.proj.outputs.args }}
