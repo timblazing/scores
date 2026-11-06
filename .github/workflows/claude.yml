@@ -28,13 +28,6 @@ jobs:
       BASH_MAX_OUTPUT_LENGTH: '30000'
       CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: '75'
       CLAUDE_CODE_DISABLE_AUTO_MEMORY: '1'
-      # Optional. proj sets this secret when anton has the key; without it Claude runs without Composio.
-      COMPOSIO_CONSUMER_API_KEY: ${{ secrets.COMPOSIO_CONSUMER_API_KEY }}
-      # Inline JSON, not a file: claude-code-action drops --mcp-config file paths. Claude Code expands the
-      # ${VAR} header itself, so the key never appears in the arguments.
-      COMPOSIO_ARGS: >-
-        --allowedTools mcp__composio
-        --append-system-prompt "The composio MCP server reaches external apps such as Gmail, Slack, Notion or Linear. Find a tool with COMPOSIO_SEARCH_TOOLS, then run it with COMPOSIO_MULTI_EXECUTE_TOOL. Read freely; write to an external app (send, post, create, delete) only when the task asks for that write."
     permissions:
       contents: write
       pull-requests: write
@@ -63,9 +56,6 @@ jobs:
         shell: bash
         run: |
           config='{"mcpServers":{}}'
-          if [ -n "$COMPOSIO_CONSUMER_API_KEY" ]; then
-            config=$(printf '%s' "$config" | jq -c '.mcpServers.composio = {type:"http",url:"https://connect.composio.dev/mcp",headers:{"x-consumer-api-key":"${COMPOSIO_CONSUMER_API_KEY}"}}')
-          fi
           if curl --fail --silent --max-time 5 https://proj.blasingame.dev/api/health >/dev/null; then
             config=$(printf '%s' "$config" | jq -c '.mcpServers.proj = {type:"http",url:"https://proj.blasingame.dev/api/mcp"}')
           fi
@@ -77,5 +67,4 @@ jobs:
           claude_args: >-
             --model claude-opus-5-5 --effort medium
             --permission-mode bypassPermissions
-            ${{ env.COMPOSIO_CONSUMER_API_KEY != '' && env.COMPOSIO_ARGS || '' }}
             ${{ steps.proj.outputs.args }}
