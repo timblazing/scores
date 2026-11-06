@@ -16,6 +16,7 @@ For Claude (GitHub Actions, `@claude`) and Codex (Codex Cloud, `@codex`) working
 - Never push to `main`. Work on a branch and open a pull request.
 - Verify with `pnpm build` before you push (install first with `pnpm install --frozen-lockfile`).
 - Do not update local session logs or work logs (for example `docs/WORKLOG.md`); put remaining work in the PR description.
+- End every issue comment you post with a status marker on its own last line, as an HTML comment (GitHub doesn't show it): `<!-- proj-agent: needs-input -->` when you are waiting on an answer from the owner, `<!-- proj-agent: working -->` for an acknowledgement or progress note, `<!-- proj-agent: done -->` once the work is finished. proj reads it to show the issue's status.
 - The shared instructions installed with the skills are written for a local Mac. In the cloud, skip the local-only rules: browser work through `agent-browser` (and the `ui-check`, `ui-qa`, `ui-evidence` skills), iOS simulators and Android emulators, the Docker/VM rules and T3 Code tools. Say in the PR what still needs checking by hand.
 - Composio tools (`mcp__composio__*`, external apps such as Gmail, Slack or Notion) are there only when the repo has the `COMPOSIO_CONSUMER_API_KEY` secret. Read freely; write to an external app (send, post, create, delete) only when the task asks for that write.
 
