@@ -12,7 +12,7 @@ Don't boot or open an iOS Simulator (T3 Device panel, `simctl`, `expo run:ios`, 
 
 For Claude (GitHub Actions, `@claude`) and Codex (Codex Cloud, `@codex`) working on this repo in the cloud.
 
-- Skills come from [timblazing/skills](https://github.com/timblazing/skills). The Claude workflow installs them before each run, and so does the Codex Cloud environment's setup script. Use `pr-workflow` to land changes and `leaving-pr-comments` for anything you post on GitHub.
+- Skills come from [timblazing/skills](https://github.com/timblazing/skills). The Claude workflow installs them before each run, and so does the Codex Cloud environment's setup script. Use `build` to land changes (it calls the other workflow skills) and `leaving-pr-comments` for anything you post on GitHub.
 - Never push to `main`. Work on a branch and open a pull request.
 - Verify with `pnpm build` before you push (install first with `pnpm install --frozen-lockfile`).
 - Do not update local session logs or work logs (for example `docs/WORKLOG.md`); put remaining work in the PR description.
