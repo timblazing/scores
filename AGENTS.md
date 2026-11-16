@@ -10,7 +10,7 @@ Don't boot or open an iOS Simulator (T3 Device panel, `simctl`, `expo run:ios`, 
 
 ## Unattended agents
 
-For Claude (GitHub Actions, `@claude`) running unattended on this repo, on anton's single-use runners.
+For Claude (GitHub Actions, `@claude`) running unattended on this repo, on GitHub-hosted runners by default (anton-jit is a per-project opt-in).
 
 - Skills come from [timblazing/skills](https://github.com/timblazing/skills). The Claude workflow installs them before each run. Use `build` to land changes (it calls the other workflow skills) and `leaving-pr-comments` for anything you post on GitHub.
 - Never push to `main`. Work on a branch and open a pull request.
